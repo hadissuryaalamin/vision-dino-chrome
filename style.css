@@ -1,0 +1,233 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #1a1a2e;
+  color: #eee;
+  font-family: 'Courier New', monospace;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 12px;
+}
+
+h1 {
+  font-size: 1.5rem;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+  color: #e94560;
+  text-transform: uppercase;
+}
+
+#subtitle {
+  font-size: 0.75rem;
+  color: #aaa;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+#controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+button {
+  background: #e94560;
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-radius: 4px;
+  letter-spacing: 1px;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #c73652;
+}
+
+button:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
+
+#arena {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  max-width: 1200px;
+  justify-content: center;
+}
+
+.player-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #16213e;
+  border-radius: 8px;
+  padding: 8px;
+  border: 2px solid #0f3460;
+}
+
+.player-panel.eliminated {
+  opacity: 0.5;
+  border-color: #555;
+}
+
+.player-label {
+  font-size: 0.85rem;
+  font-weight: bold;
+  margin-bottom: 4px;
+  letter-spacing: 2px;
+}
+
+.p1 .player-label { color: #ff6b6b; }
+.p2 .player-label { color: #4ecdc4; }
+.p3 .player-label { color: #ffe66d; }
+
+.score-display {
+  font-size: 0.75rem;
+  color: #aaa;
+  margin-bottom: 6px;
+}
+
+.game-canvas {
+  width: 100%;
+  height: 140px;
+  border-radius: 4px;
+  background: #0f3460;
+  display: block;
+}
+
+.gesture-label {
+  font-size: 0.7rem;
+  color: #888;
+  margin-top: 4px;
+  min-height: 1em;
+}
+
+.status-badge {
+  font-size: 0.7rem;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #0f3460;
+  color: #aaa;
+}
+
+.status-badge.alive { background: #1b4d2e; color: #4caf50; }
+.status-badge.dead  { background: #4d1b1b; color: #f44336; }
+
+#camera-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 1200px;
+  justify-content: center;
+}
+
+#webcam-wrap {
+  position: relative;
+  width: 320px;
+  flex-shrink: 0;
+}
+
+#webcam-wrap video,
+#webcam-wrap canvas {
+  width: 320px;
+  height: 240px;
+  border-radius: 6px;
+  display: block;
+}
+
+#webcam-wrap canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+#legend {
+  font-size: 0.72rem;
+  color: #aaa;
+  line-height: 1.7;
+  max-width: 260px;
+}
+
+#legend h3 {
+  color: #e94560;
+  margin-bottom: 6px;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+}
+
+#legend ul {
+  list-style: none;
+  padding: 0;
+}
+
+#legend li::before {
+  content: '▸ ';
+  color: #e94560;
+}
+
+#winner-banner {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+#winner-banner.show {
+  display: flex;
+}
+
+#winner-box {
+  background: #16213e;
+  border: 2px solid #e94560;
+  border-radius: 12px;
+  padding: 40px 60px;
+  text-align: center;
+}
+
+#winner-box h2 {
+  font-size: 2rem;
+  color: #e94560;
+  margin-bottom: 10px;
+}
+
+#winner-box p {
+  color: #aaa;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 700px) {
+  #arena {
+    flex-direction: column;
+    align-items: center;
+  }
+  .player-panel {
+    width: 100%;
+    max-width: 380px;
+  }
+  #camera-row {
+    flex-direction: column;
+    align-items: center;
+  }
+}

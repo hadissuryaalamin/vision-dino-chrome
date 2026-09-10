@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vision Dino – 3-Player Gesture Runner</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- MediaPipe CDN bundles (no build step required) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"       crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"               crossorigin="anonymous"></script>
+</head>
+<body>
+
+<h1>Vision Dino</h1>
+<p id="subtitle">3-Player Face &amp; Hand Gesture Endless Runner · One Webcam</p>
+
+<div id="controls">
+  <button id="btn-camera">📷 Enable Camera</button>
+  <button id="btn-start"  disabled>▶ Start Game</button>
+  <button id="btn-restart" disabled>↺ Restart</button>
+</div>
+
+<!-- Three game lanes -->
+<div id="arena">
+  <div class="player-panel p1" id="panel-0">
+    <div class="player-label">PLAYER 1</div>
+    <div class="score-display" id="score-0">Score: 0</div>
+    <canvas class="game-canvas" id="canvas-0"></canvas>
+    <div class="gesture-label" id="gesture-0">–</div>
+    <div class="status-badge" id="status-0">waiting</div>
+  </div>
+
+  <div class="player-panel p2" id="panel-1">
+    <div class="player-label">PLAYER 2</div>
+    <div class="score-display" id="score-1">Score: 0</div>
+    <canvas class="game-canvas" id="canvas-1"></canvas>
+    <div class="gesture-label" id="gesture-1">–</div>
+    <div class="status-badge" id="status-1">waiting</div>
+  </div>
+
+  <div class="player-panel p3" id="panel-2">
+    <div class="player-label">PLAYER 3</div>
+    <div class="score-display" id="score-2">Score: 0</div>
+    <canvas class="game-canvas" id="canvas-2"></canvas>
+    <div class="gesture-label" id="gesture-2">–</div>
+    <div class="status-badge" id="status-2">waiting</div>
+  </div>
+</div>
+
+<!-- Camera preview + legend -->
+<div id="camera-row">
+  <div id="webcam-wrap">
+    <video id="webcam" autoplay playsinline muted></video>
+    <canvas id="overlay"></canvas>
+  </div>
+
+  <div id="legend">
+    <h3>HOW TO PLAY</h3>
+    <ul>
+      <li>Stand in front of the webcam — each player takes one third of the frame.</li>
+      <li><strong>JUMP:</strong> Raise your open hand above your face, or raise your eyebrows quickly.</li>
+      <li><strong>DUCK:</strong> Lower your chin toward your chest, or lower your hand below your face.</li>
+      <li>Last player still alive wins!</li>
+    </ul>
+    <br/>
+    <h3>ZONE LAYOUT</h3>
+    <ul>
+      <li>← left third   → Player 1</li>
+      <li>← centre third → Player 2</li>
+      <li>← right third  → Player 3</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Winner overlay -->
+<div id="winner-banner">
+  <div id="winner-box">
+    <h2 id="winner-title">🏆 Winner!</h2>
+    <p  id="winner-sub">Scores will appear here.</p>
+    <button id="btn-play-again">Play Again</button>
+  </div>
+</div>
+
+<script type="module">
+  import { GameManager } from './game.js';
+  import { GestureDetector } from './gesture.js';
+
+  const canvases = [0, 1, 2].map(i => document.getElementById(`canvas-${i}`));
+  const PLAYER_NAMES = ['Player 1', 'Player 2', 'Player 3'];
+
+  let gameManager = null;
+  let gestureDetector = null;
+  let gameStarted = false;
+
+  // Score ticker
+  setInterval(() => {
+    if (!gameManager) return;
+    const scores = gameManager.getScores();
+    scores.forEach((s, i) => {
+      document.getElementById(`score-${i}`).textContent = `Score: ${s}`;
+    });
+  }, 100);
+
+  // ── Camera button ─────────────────────────────────────────────────────────
+  document.getElementById('btn-camera').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-camera');
+    btn.disabled = true;
+    btn.textContent = '⏳ Loading MediaPipe…';
+
+    gestureDetector = new GestureDetector(
+      document.getElementById('webcam'),
+      document.getElementById('overlay'),
+      (playerIndex, gesture) => {
+        // Update gesture label
+        const labels = { none: '–', jump: '⬆ JUMP', duck: '⬇ DUCK' };
+        document.getElementById(`gesture-${playerIndex}`).textContent = labels[gesture] || '–';
+
+        // Forward to game
+        if (gameManager && gameStarted) {
+          gameManager.applyGesture(playerIndex, gesture);
+        }
+      }
+    );
+
+    try {
+      await gestureDetector.start();
+      btn.textContent = '✅ Camera On';
+      document.getElementById('btn-start').disabled = false;
+    } catch (err) {
+      btn.textContent = '❌ Camera Error';
+      btn.disabled = false;
+      console.error(err);
+      alert('Could not access webcam: ' + err.message);
+    }
+  });
+
+  // ── Start button ──────────────────────────────────────────────────────────
+  document.getElementById('btn-start').addEventListener('click', () => {
+    startGame();
+  });
+
+  document.getElementById('btn-restart').addEventListener('click', () => {
+    if (gameManager) {
+      document.getElementById('winner-banner').classList.remove('show');
+      gameManager.restart();
+      gameStarted = true;
+      setAllStatus('alive');
+    }
+  });
+
+  document.getElementById('btn-play-again').addEventListener('click', () => {
+    document.getElementById('winner-banner').classList.remove('show');
+    if (gameManager) {
+      gameManager.restart();
+      gameStarted = true;
+      setAllStatus('alive');
+    }
+  });
+
+  function startGame() {
+    if (!gameManager) {
+      gameManager = new GameManager(canvases, onGameOver);
+    }
+    gameManager.start();
+    gameStarted = true;
+    setAllStatus('alive');
+    document.getElementById('btn-start').disabled   = true;
+    document.getElementById('btn-restart').disabled = false;
+    document.getElementById('winner-banner').classList.remove('show');
+  }
+
+  function setAllStatus(status) {
+    [0, 1, 2].forEach(i => {
+      const el = document.getElementById(`status-${i}`);
+      el.textContent = status;
+      el.className = `status-badge ${status}`;
+      document.getElementById(`panel-${i}`).classList.remove('eliminated');
+    });
+  }
+
+  function onGameOver(winnerIndex) {
+    gameStarted = false;
+    const scores = gameManager.getScores();
+
+    // Mark eliminated players
+    [0, 1, 2].forEach(i => {
+      const runner = gameManager.runners[i];
+      if (!runner.alive) {
+        const el = document.getElementById(`status-${i}`);
+        el.textContent = 'dead';
+        el.className = 'status-badge dead';
+        document.getElementById(`panel-${i}`).classList.add('eliminated');
+      }
+    });
+
+    const banner  = document.getElementById('winner-banner');
+    const title   = document.getElementById('winner-title');
+    const sub     = document.getElementById('winner-sub');
+
+    if (winnerIndex !== null) {
+      title.textContent = `🏆 ${PLAYER_NAMES[winnerIndex]} Wins!`;
+    } else {
+      title.textContent = '💀 Everyone Died!';
+    }
+
+    sub.innerHTML = scores.map((s, i) =>
+      `${PLAYER_NAMES[i]}: <strong>${s}</strong>`
+    ).join(' &nbsp;|&nbsp; ');
+
+    banner.classList.add('show');
+  }
+</script>
+</body>
+</html>
