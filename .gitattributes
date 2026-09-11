@@ -1,0 +1,10 @@
+# Normalise text files to LF in the repository and in every working tree (including
+# Windows worktrees with core.autocrlf=true) so Prettier checks agree across agents.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.wasm binary
+*.task binary
+*.tflite binary
