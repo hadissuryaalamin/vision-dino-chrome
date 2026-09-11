@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Build and test output (never committed; static hosting builds from source)
+dist/
+coverage/
+test-results/
+playwright-report/
+.vite/
+
+# Environment and local overrides (never commit secrets)
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,87 @@
+# Decisions, open questions, risks and assumptions
+
+Owned by the orchestrator. Agents propose additions in their reports.
+
+## Decisions made during setup (2026-09-11)
+
+| ID   | Decision                                                                                                                 | Reason                                                                                                                       |
+| ---- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| D-01 | Adopt TypeScript + Vite + Canvas 2D + plain CSS + Vitest + ESLint + Prettier, with npm.                                  | `main` had no stack; this matches the proposed direction.                                                                    |
+| D-02 | Do not adopt or merge `origin/copilot/browser-based-endless-runner`; keep it untouched as a reference.                   | It is a different design (3 players, jump and duck, hands, deprecated MediaPipe solutions, no TS or tests).                  |
+| D-03 | Pin TypeScript to `~6.0`, not 7.x.                                                                                       | typescript-eslint 8.70 supports TypeScript `<6.1`. Revisit when it supports 7.                                               |
+| D-04 | Enforce module boundaries and privacy rules with ESLint (`no-restricted-imports`, `-globals`, `-properties`, `-syntax`). | Turns architecture rules into failing checks for all three agents. Verified with deliberately rule-breaking probe files.     |
+| D-05 | Relative imports only; no path aliases.                                                                                  | Avoids extra Vite and TS configuration; the boundary rules match path segments.                                              |
+| D-06 | Separate `vitest.config.ts` (orchestrator) from `vite.config.ts` (Agent 3 from Phase 3).                                 | Fewer merge conflicts.                                                                                                       |
+| D-07 | Install `jsdom` in Phase 1; the default test environment stays Node.                                                     | Agents 1 and 3 both need DOM tests; installing once avoids competing lockfile edits.                                         |
+| D-08 | Only the orchestrator edits `src/shared/**`; changes go through ICRs.                                                    | One owner for cross-agent contracts.                                                                                         |
+| D-09 | Vision emits `{ type: "gesture", playerId, gesture }` rather than names like `player1-blink`.                            | The gesture-to-player mapping stays configuration; equivalent semantics.                                                     |
+| D-10 | `VisionSession.start()` resolves with `{ ok: false, error }` instead of rejecting.                                       | Explicit, typed error handling in the UI flow.                                                                               |
+| D-11 | The UI owns the `<video>` element and passes it in; vision reports display-space rectangles.                             | The UI controls layout; mirroring is handled in exactly one place.                                                           |
+| D-12 | Mirrored preview by default; assignment uses display space.                                                              | With a mirrored preview, the player on the left sees themselves on the left.                                                 |
+| D-13 | After the lock, identity follows the tracked person; manual swap and reset are available.                                | Calibration is personal; small moves never swap identities. Confirmed by the user (O-06).                                    |
+| D-14 | Calibration and all face data stay in memory only.                                                                       | Privacy rule: no biometric persistence.                                                                                      |
+| D-15 | The vision library is loaded lazily with a dynamic import, only in camera mode.                                          | Keyboard-only play never downloads the model.                                                                                |
+| D-16 | One canvas with two stacked lanes; one seeded obstacle sequence shared by both lanes.                                    | "Same or synchronised obstacles" with fair comparison.                                                                       |
+| D-17 | Default keys: Player 1 `KeyW`, Player 2 `ArrowUp`; `Enter` start or restart; `P`/`Escape` pause; `` ` `` debug.          | Left player uses the left hand; avoids Space activating focused buttons.                                                     |
+| D-18 | `base: "./"` in `vite.config.ts`.                                                                                        | The static build works from any sub-path, including the GitHub Pages project site.                                           |
+| D-19 | `.gitattributes` forces LF line endings.                                                                                 | `core.autocrlf=true` on this machine would otherwise make Prettier checks fail in Windows worktrees.                         |
+| D-20 | No UI framework.                                                                                                         | A few screens; smaller bundle and fewer decisions.                                                                           |
+| D-21 | `jsdom` `^29.1.1` instead of 30.x; Node engines `^22.13.0 \|\| ^24.0.0 \|\| >=26.0.0`.                                   | jsdom 30 requires Node ≥ 24.15 (this machine runs 24.14.1); Vitest 5 dropped Node 20. Revisit jsdom 30 after a Node upgrade. |
+
+## Product and process decisions (answered by the user, 2026-09-11)
+
+| ID   | Question                                 | Decision                                                                                                             | Consequences                                                                                                                                                                           |
+| ---- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| O-01 | Source of the model and WASM files       | Self-host both from the site origin under `public/vision/`, and **commit** `face_landmarker.task`.                   | Agent 2 records the model version, source URL, license and SHA-256 in `public/vision/README.md`. No third-party runtime requests.                                                      |
+| O-02 | Hosting and deployment                   | **GitHub Pages, deployed automatically on every push to `main`** (GitHub Actions; `workflow_dispatch` also allowed). | Merging into `main` publishes the site, so `main` must always pass `npm run check`; the workflow runs it before deploying. The user enables Settings → Pages → Source: GitHub Actions. |
+| O-03 | When a round ends                        | When **both** players have crashed; the last dino still running wins.                                                | `roundEnd: "first-crash"` stays available as a config option (Agent 1).                                                                                                                |
+| O-04 | Face lost during a round                 | **Warn only**; no auto-pause.                                                                                        | Agent 3 shows a per-player HUD warning.                                                                                                                                                |
+| O-05 | Playwright for end-to-end tests          | **Approved** as a dev dependency for Agent 3 in Phase 3.                                                             | Permission-flow tests with Chromium's fake camera; added in a dedicated commit.                                                                                                        |
+| O-06 | Players crossing positions               | Identity **follows the person**; Swap and Reset controls are provided.                                               | See D-13 and architecture §9.                                                                                                                                                          |
+| O-07 | "Long blink" mode                        | **Not offered.**                                                                                                     | `minActiveMs` stays an internal tunable. Revisit only if Phase 4 false-jump counts are high.                                                                                           |
+| O-08 | Inference in a Web Worker                | Main thread first; move to a worker **only if** Phase 4 profiling shows dropped game frames.                         | Agent 2 keeps the detector behind `LandmarkDetector`, so a worker can be introduced later.                                                                                             |
+| O-09 | Dev pages in production                  | **No**: the game playground and Vision Lab are dev-only.                                                             | Never add them to the production build inputs.                                                                                                                                         |
+| O-10 | `CLAUDE.md`                              | **Added**, containing only `@AGENTS.md`.                                                                             | `AGENTS.md` remains the single source of rules.                                                                                                                                        |
+| O-11 | `numFaces`                               | **2**; measure 3 in Phase 4.                                                                                         | Bystanders remain a documented limitation (R-09).                                                                                                                                      |
+| O-12 | Agents pushing and opening pull requests | Agents may **push their own `agent/*` branch and open a draft pull request** into `main` when their task is done.    | Never push to `main`. The user or orchestrator reviews, marks ready and merges; merging deploys (O-02).                                                                                |
+
+## Open decisions
+
+None at the moment. New questions get the next number (O-13, ...).
+
+## Risks
+
+| ID   | Risk                                                                                 | Mitigation                                                                                            |
+| ---- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| R-01 | Two people in one frame means small faces; eye landmarks get noisy at distance.      | 720p camera, positioning guidance, minimum face size gate, per-player calibration.                    |
+| R-02 | Involuntary blinks cause unwanted jumps.                                             | Deep calibrated threshold, `minActiveMs`, cooldown; no long-blink mode (O-07), so measure in Phase 4. |
+| R-03 | Talking or laughing opens the mouth.                                                 | Wide-open calibration, minimum duration, cooldown.                                                    |
+| R-04 | Looking down at the keyboard or screen lowers EAR.                                   | Head-pose quality gate; instructions.                                                                 |
+| R-05 | Camera, inference and debounce latency (~150–250 ms) make the game feel unfair.      | Reaction allowance in obstacle spacing, `jumpBufferMs`, latency measurement in Phase 4.               |
+| R-06 | Main-thread inference causes rendering jank.                                         | At most one inference in flight, frame skipping, worker if profiling needs it (O-08).                 |
+| R-07 | The MediaPipe 1.x API may differ from the documented 0.10.x usage.                   | Agent 2 verifies against installed types; the detector sits behind the `LandmarkDetector` interface.  |
+| R-08 | The GPU delegate is unavailable on some machines.                                    | CPU fallback; record performance.                                                                     |
+| R-09 | A bystander's face replaces a player's face.                                         | Documented limitation; swap and reset controls; `numFaces: 3` measured in Phase 4 (O-11).             |
+| R-10 | Players crossing or occluding each other confuses identities.                        | Tracking with a margin, reacquire window, swap and reset, visible labels.                             |
+| R-11 | Lighting, glasses or facial differences prevent reliable detection for some players. | Calibration failure messages; keyboard always available.                                              |
+| R-12 | Gesture controls exclude some players (e.g. people who cannot blink deliberately).   | Keyboard fallback is first-class; remappable gestures possible later through `playerGestures`.        |
+| R-13 | Concurrent agents cause `package-lock.json` conflicts.                               | Dependency commits kept separate; the lockfile is regenerated, never hand-merged.                     |
+| R-14 | The TypeScript 6.0 pin lags behind TypeScript 7.                                     | Revisit when typescript-eslint supports 7.                                                            |
+| R-15 | A blinking player briefly cannot see the screen.                                     | Keep `minActiveMs` short; tune game speed.                                                            |
+| R-16 | Model download size (several MB) delays camera mode.                                 | Lazy loading, loading indicator, cacheable static assets.                                             |
+| R-17 | Auto-deploy on `main` (O-02) publishes whatever is merged, including a broken build. | The deploy workflow runs `npm run check` first; only reviewed pull requests are merged.               |
+
+## Assumptions
+
+- A-01: A desktop or laptop with one webcam; both players sit side by side about 0.5–1.5 m
+  from the camera.
+- A-02: Chromium-based desktop browsers are the primary target; nothing is claimed as supported
+  until tested.
+- A-03: The UI is in English.
+- A-04: No accounts, backend, persistence or analytics.
+- A-05: The site is served over HTTPS (GitHub Pages) or `localhost` during development.
+- A-06: GitHub (`origin`) is the remote; agents open draft pull requests there (O-12).
+
+## Test log
+
+Record tested browsers, versions, cameras and measurements here in Phase 4.
