@@ -57,8 +57,10 @@ re-reads the pixel ratio every frame. A canvas without CSS size keeps its initia
   drawn greyed out with "P*n* CRASHED") and emits `player-crashed` once.
 - **Scoring:** `floor(distance × scorePerUnit)` for each surviving player.
 - **Round end (O-03):** `roundEnd: "all-crashed"` (default) ends when both players have
-  crashed; `"first-crash"` at the first crash. The higher score wins; equal scores give
-  `winner: null` (see "Known limitations").
+  crashed; `"first-crash"` at the first crash. The higher score wins. On equal scores the
+  player who crashed later (or did not crash) wins, so the last dino still running wins even
+  when both scores round to the same integer. `winner` is `null` only when both crashed in
+  the same step with equal scores (ICR 1).
 - **Events** are synchronous and emitted after the change. Within a step: `player-jumped`,
   then `player-crashed`, then `status-changed` (→ `game-over`), then `game-over`. A throwing
   listener does not break the step; its error goes to `onListenerError` (default: rethrown
@@ -121,9 +123,5 @@ World units: one lane is 900 × 280 units. Speeds in units/s, durations in ms.
 
 ## Known limitations
 
-- With `first-crash`, the survivor usually has the same score as the crashed player (they
-  travelled the same distance), so the contract's "equal scores tie" rule often yields
-  `winner: null`. The same can happen in `all-crashed` mode when the second crash follows
-  within one score point (≈ 90 ms at start speed). See the ICR in the pull request.
 - Visual design is deliberately simple (rectangles). Colour is never the only cue: lanes carry
   text labels, and each dinosaur shows its player number.

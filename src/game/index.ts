@@ -23,7 +23,8 @@
  *   `game-over`.
  * - With `roundEnd: "all-crashed"` (default, decision O-03) the round ends when both
  *   players have crashed; with `"first-crash"` at the first crash. The higher score wins;
- *   equal scores give `winner: null`.
+ *   on equal scores the player who crashed later (or did not crash) wins; `winner` is null
+ *   only when both crashed in the same step with equal scores (ICR 1).
  * - `getSnapshot()` returns a frozen object that is only replaced after a state change.
  *
  * @packageDocumentation

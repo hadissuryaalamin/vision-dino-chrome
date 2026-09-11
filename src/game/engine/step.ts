@@ -1,13 +1,44 @@
-import { PLAYER_IDS, type GameEvent, type GameResult, type PerPlayer } from "../../shared";
+import {
+  PLAYER_IDS,
+  type GameEvent,
+  type GameResult,
+  type PerPlayer,
+  type PlayerId,
+} from "../../shared";
 import type { GameConfig } from "../config";
 import { dinoHitsObstacle } from "./collision";
 import { generateObstacle } from "./obstacles";
 import type { MutableGameState, MutablePlayerState } from "./state";
 
-/** Higher score wins; equal scores are a tie (`winner: null`). */
-export function buildResult(scores: PerPlayer<number>): GameResult {
-  const winner = scores[1] > scores[2] ? 1 : scores[2] > scores[1] ? 2 : null;
-  return Object.freeze({ winner, scores: Object.freeze({ 1: scores[1], 2: scores[2] }) });
+/** One player's standing when the round ends. */
+export interface ResultEntry {
+  readonly score: number;
+  /** `elapsedMs` of the crash step, or null if the player had not crashed. */
+  readonly crashedAtMs: number | null;
+}
+
+/**
+ * The higher score wins. On equal scores the player who crashed later (or did not crash)
+ * wins; `winner` is null only when both crashed in the same step with equal scores (ICR 1).
+ * Crashes in the same step have identical `crashedAtMs` (it is derived from the step count).
+ */
+export function buildResult(players: PerPlayer<ResultEntry>): GameResult {
+  const p1 = players[1];
+  const p2 = players[2];
+  let winner: PlayerId | null;
+  if (p1.score !== p2.score) {
+    winner = p1.score > p2.score ? 1 : 2;
+  } else {
+    const survived1 = p1.crashedAtMs ?? Number.POSITIVE_INFINITY;
+    const survived2 = p2.crashedAtMs ?? Number.POSITIVE_INFINITY;
+    winner = survived1 === survived2 ? null : survived1 > survived2 ? 1 : 2;
+  }
+  return Object.freeze({ winner, scores: Object.freeze({ 1: p1.score, 2: p2.score }) });
+}
+
+function resultEntry(state: MutableGameState, playerId: PlayerId): ResultEntry {
+  const player = state.players[playerId];
+  return { score: player.score, crashedAtMs: player.crash?.elapsedMs ?? null };
 }
 
 function takeOff(
@@ -118,7 +149,7 @@ export function simulateStep(
   const ended = config.roundEnd === "first-crash" ? crashed > 0 : crashed === PLAYER_IDS.length;
   if (ended) {
     state.status = "game-over";
-    state.result = buildResult({ 1: state.players[1].score, 2: state.players[2].score });
+    state.result = buildResult({ 1: resultEntry(state, 1), 2: resultEntry(state, 2) });
     events.push({
       type: "status-changed",
       status: "game-over",
