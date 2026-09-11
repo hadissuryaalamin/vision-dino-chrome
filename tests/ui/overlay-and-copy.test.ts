@@ -138,6 +138,10 @@ describe("copy", () => {
     expect(resultText({ winner: 1, scores: { 1: 1, 2: 0 } })).toBe(
       "Player 1 wins with 1 point. Player 2 scored 0 points.",
     );
+    // ICR 1: equal scores, but Player 2 crashed later.
+    expect(resultText({ winner: 2, scores: { 1: 40, 2: 40 } })).toBe(
+      "Player 2 wins by running longer. Both players scored 40 points.",
+    );
   });
 
   it("names keys for display and speech", () => {

@@ -216,8 +216,13 @@ export function resultText(result: GameResult | null): string {
       ? `It's a tie: both players scored ${points(result.scores[1])}.`
       : `It's a tie. Player 1: ${points(result.scores[1])}. Player 2: ${points(result.scores[2])}.`;
   }
-  const loser = otherPlayer(result.winner);
-  return `${playerName(result.winner)} wins with ${points(result.scores[result.winner])}. ${playerName(loser)} scored ${points(result.scores[loser])}.`;
+  const winner = result.winner;
+  const loser = otherPlayer(winner);
+  // ICR 1: on equal scores the player who crashed later (or did not crash) wins.
+  if (result.scores[winner] === result.scores[loser]) {
+    return `${playerName(winner)} wins by running longer. Both players scored ${points(result.scores[winner])}.`;
+  }
+  return `${playerName(winner)} wins with ${points(result.scores[winner])}. ${playerName(loser)} scored ${points(result.scores[loser])}.`;
 }
 
 const KEY_NAMES: Readonly<Record<string, { readonly label: string; readonly spoken: string }>> = {
