@@ -69,6 +69,8 @@ Run and record, in the agent report and `docs/decisions.md`:
       camera off, and closing or navigating away from the tab.
 - [ ] Performance: game fps with vision on and off, vision fps, inference ms, gesture-to-jump
       latency.
+- [ ] Network panel in camera mode: no request to `odml.pa.googleapis.com` or any other
+      third-party host in the production build (decision O-13).
 - [ ] Browsers and versions tested; anything untested is listed as a limitation.
 
 ## Git worktree strategy
