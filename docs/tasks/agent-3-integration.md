@@ -143,7 +143,9 @@ Tests pass fakes.
     information by colour alone; everything operable by keyboard.
 13. **Production CSP:** an inline Vite plugin with `apply: "build"` that injects the `<meta>` CSP
     from architecture §14. Verify it with the real, self-hosted MediaPipe assets and adjust only
-    what is required.
+    what is required. It **must** keep `connect-src 'self'`: that is what blocks MediaPipe's
+    built-in telemetry (decision O-13). Check in the browser's network panel that no request
+    reaches `odml.pa.googleapis.com`.
 14. **GitHub Pages deployment (decision O-02: deploy on every push to `main`).** Keep
     `base: "./"` and verify the build under the project sub-path (`/vision-dino-chrome/`). Add
     `.github/workflows/deploy-pages.yml`, triggered by `push` to `main` and `workflow_dispatch`:

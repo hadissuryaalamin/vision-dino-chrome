@@ -469,8 +469,9 @@ these. The overlay is off by default and toggled with `` ` `` or `?debug=1`.
 - **Jump rules:** `jumpPlayer` is applied on the next step. Airborne requests are ignored
   except within `jumpBufferMs` (≈ 100 ms) before landing, which forgives vision latency.
 - **Round end:** by default the round ends when **both** players have crashed; the higher
-  score wins, and equal scores are a tie (`winner: null`). A `first-crash` mode is a
-  configuration option (O-03).
+  score wins. On equal scores, the player who crashed later (or did not crash) wins; it is a
+  tie (`winner: null`) only when both crash in the same step with equal scores (ICR 1). A
+  `first-crash` mode is a configuration option (O-03).
 - **State vs. rendering:** the engine exposes internal state to the renderer read-only, and a
   `GameSnapshot` to the UI. The renderer never mutates.
 - **Public API** (`src/game/index.ts`): `createGame({ canvas, seed?, config?, scheduler? })`
@@ -539,7 +540,9 @@ level, anything implementing `PlayerInputSource` can feed the input router.
 - **Content Security Policy (production build):** Agent 3 adds a `<meta>` CSP through an inline
   Vite plugin (`apply: "build"`, so dev HMR is not broken). Draft:
   `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob: mediastream:; worker-src 'self' blob:; style-src 'self'; object-src 'none'; base-uri 'self'`.
-  `connect-src 'self'` backs the local-only promise technically. The exact directives MediaPipe
+  `connect-src 'self'` backs the local-only promise technically, and it also blocks
+  MediaPipe 1.0.1's built-in usage telemetry to `odml.pa.googleapis.com`, which cannot be
+  disabled any other way (decision O-13). The exact directives MediaPipe
   needs must be verified in Phase 3.
 - No analytics, telemetry, cookies or third-party runtime requests (O-01 covers asset hosting).
 

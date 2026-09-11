@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!--
+      Allow connections to this origin only (and the Vite dev server's HMR websocket). This
+      blocks the usage-metrics upload built into @mediapipe/tasks-vision
+      (odml.pa.googleapis.com) and any other third-party request. See public/vision/README.md.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="connect-src 'self' ws://localhost:* ws://127.0.0.1:* ws://[::1]:*"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vision Lab · Vision Dino (development only)</title>
+    <link rel="stylesheet" href="./lab.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Vision Lab</h1>
+        <p class="notice" role="note">
+          <strong>Camera processing stays on this device.</strong> Video frames are analysed in this
+          browser tab and are never uploaded, recorded or saved. The camera starts only when you
+          click <em>Start camera</em>. Development page; not part of the production build.
+        </p>
+      </header>
+
+      <section class="controls" aria-label="Session controls">
+        <button id="start" type="button">Start camera</button>
+        <button id="stop" type="button">Stop camera</button>
+        <button id="calibrate" type="button">Calibrate</button>
+        <button id="defaults" type="button">Use defaults</button>
+        <button id="cancel" type="button">Cancel calibration</button>
+        <button id="swap" type="button">Swap players</button>
+        <button id="reset" type="button">Reset assignment</button>
+        <label><input id="mirrored" type="checkbox" checked /> Mirrored preview</label>
+        <label><input id="show-landmarks" type="checkbox" /> Landmarks</label>
+        <label><input id="show-metric-points" type="checkbox" /> Metric points (indices)</label>
+      </section>
+
+      <section class="stage">
+        <div id="preview" class="preview">
+          <video id="video" playsinline muted></video>
+          <canvas id="overlay"></canvas>
+        </div>
+        <dl class="global">
+          <dt>Status</dt>
+          <dd id="status">idle</dd>
+          <dt>Faces detected</dt>
+          <dd id="faces">0</dd>
+          <dt>Assignment</dt>
+          <dd id="lock">–</dd>
+          <dt>Processing fps</dt>
+          <dd id="fps">–</dd>
+          <dt>Inference ms</dt>
+          <dd id="inference">–</dd>
+          <dt>Frame size</dt>
+          <dd id="frame-size">–</dd>
+        </dl>
+      </section>
+
+      <section class="players">
+        <article class="player" data-player="1">
+          <h2>Player 1 · <span data-field="gesture">blink</span></h2>
+          <canvas class="sparkline" width="480" height="90"></canvas>
+          <dl data-fields></dl>
+        </article>
+        <article class="player" data-player="2">
+          <h2>Player 2 · <span data-field="gesture">mouth-open</span></h2>
+          <canvas class="sparkline" width="480" height="90"></canvas>
+          <dl data-fields></dl>
+        </article>
+      </section>
+
+      <section class="tuning" aria-label="Tuning">
+        <h2>Tuning</h2>
+        <p>Changes apply to a new session (the camera restarts if it was running).</p>
+        <form id="tuning">
+          <fieldset>
+            <legend>Blink (Player 1)</legend>
+            <label
+              >Enter <input id="blink-enter" type="number" step="0.01" min="0" max="1"
+            /></label>
+            <label>Exit <input id="blink-exit" type="number" step="0.01" min="0" max="1" /></label>
+            <label
+              >Min active ms <input id="blink-min-active" type="number" step="10" min="0"
+            /></label>
+            <label>Cooldown ms <input id="blink-cooldown" type="number" step="10" min="0" /></label>
+          </fieldset>
+          <fieldset>
+            <legend>Mouth (Player 2)</legend>
+            <label
+              >Enter <input id="mouth-enter" type="number" step="0.01" min="0" max="1"
+            /></label>
+            <label>Exit <input id="mouth-exit" type="number" step="0.01" min="0" max="1" /></label>
+            <label
+              >Min active ms <input id="mouth-min-active" type="number" step="10" min="0"
+            /></label>
+            <label>Cooldown ms <input id="mouth-cooldown" type="number" step="10" min="0" /></label>
+          </fieldset>
+          <fieldset>
+            <legend>Signal</legend>
+            <label>Smoothing τ ms <input id="tau" type="number" step="5" min="0" /></label>
+            <label>Min face width px <input id="min-face" type="number" step="10" min="0" /></label>
+            <label><input id="head-pose" type="checkbox" /> Head-pose gate</label>
+            <label>
+              Metric source
+              <select id="metric-source">
+                <option value="geometry">geometry (EAR / MAR)</option>
+                <option value="blendshapes">blendshapes</option>
+              </select>
+            </label>
+            <label>
+              Delegate
+              <select id="delegate">
+                <option value="GPU">GPU (CPU fallback)</option>
+                <option value="CPU">CPU</option>
+              </select>
+            </label>
+          </fieldset>
+          <button id="apply" type="submit">Apply</button>
+        </form>
+      </section>
+
+      <section class="log" aria-label="Event log">
+        <h2>Events</h2>
+        <button id="clear-log" type="button">Clear</button>
+        <ol id="log" reversed></ol>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
