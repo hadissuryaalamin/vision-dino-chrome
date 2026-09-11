@@ -124,6 +124,9 @@ Rules 1, 4–8 and 13, and the privacy rules below, are enforced by `npm run lin
   in the camera view.
 - The model and WASM are self-hosted from the site's own origin under `public/vision/`
   (decision O-01). Any third-party runtime request needs a new orchestrator decision.
+- MediaPipe 1.0.1 has built-in usage telemetry that cannot be switched off. It must stay
+  blocked by a `connect-src 'self'` Content Security Policy in the production build and the
+  Vision Lab (decision O-13). Never loosen `connect-src` to allow it.
 - Never commit secrets, credentials, `.env` files, or recordings or images of real faces.
   Test fixtures use synthetic landmark data.
 
