@@ -469,8 +469,9 @@ these. The overlay is off by default and toggled with `` ` `` or `?debug=1`.
 - **Jump rules:** `jumpPlayer` is applied on the next step. Airborne requests are ignored
   except within `jumpBufferMs` (≈ 100 ms) before landing, which forgives vision latency.
 - **Round end:** by default the round ends when **both** players have crashed; the higher
-  score wins, and equal scores are a tie (`winner: null`). A `first-crash` mode is a
-  configuration option (O-03).
+  score wins. On equal scores, the player who crashed later (or did not crash) wins; it is a
+  tie (`winner: null`) only when both crash in the same step with equal scores (ICR 1). A
+  `first-crash` mode is a configuration option (O-03).
 - **State vs. rendering:** the engine exposes internal state to the renderer read-only, and a
   `GameSnapshot` to the UI. The renderer never mutates.
 - **Public API** (`src/game/index.ts`): `createGame({ canvas, seed?, config?, scheduler? })`

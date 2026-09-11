@@ -218,7 +218,10 @@ export interface VisionSession {
   /** Begin, or restart, calibration for the given players (default: both). Reported through events. */
   startCalibration(players?: readonly PlayerId[]): void;
   cancelCalibration(): void;
-  /** Skip measuring and apply population-default thresholds for the given players (default: both). */
+  /**
+   * Skip measuring and apply population-default thresholds for the given players (default: both).
+   * Emits one "calibration-complete" event with mode "default" per player (ICR 2).
+   */
   useDefaultCalibration(players?: readonly PlayerId[]): void;
   /** Exchange the Player 1 / Player 2 face assignment. Calibration data follows the new assignment. */
   swapPlayers(): void;
