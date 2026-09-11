@@ -100,7 +100,9 @@ describe("FakeVisionSession", () => {
     const result = await session.start();
     expect(result.ok).toBe(false);
     expect(statuses(events)).toEqual(["requesting-camera", "error"]);
-    expect(events.at(-1)).toMatchObject({
+    // Real session order: `error`, then `status-changed` to `error`.
+    expect(events.slice(-2).map((event) => event.type)).toEqual(["error", "status-changed"]);
+    expect(events.at(-2)).toMatchObject({
       type: "error",
       error: { code: "camera-permission-denied" },
     });
@@ -180,6 +182,55 @@ describe("FakeVisionSession", () => {
     session.subscribe((event) => events.push(event));
     session.startCalibration();
     expect(events).toMatchObject([{ type: "calibration-failed", reason: "not-running" }]);
+  });
+
+  it("ends a running calibration with cancelled, then reports idle, on stop", async () => {
+    const session = new FakeVisionSession();
+    await session.start();
+    session.startCalibration();
+    const events: VisionEvent[] = [];
+    session.subscribe((event) => events.push(event));
+    await session.stop();
+    expect(events.map((event) => event.type)).toEqual(["calibration-failed", "status-changed"]);
+    expect(events[0]).toMatchObject({ reason: "cancelled" });
+  });
+
+  it("reports a runtime failure as not-running calibration, error, then status error", async () => {
+    const session = new FakeVisionSession();
+    await session.start();
+    session.startCalibration([1]);
+    const events: VisionEvent[] = [];
+    session.subscribe((event) => events.push(event));
+    session.fail("camera-disconnected");
+    expect(events.map((event) => event.type)).toEqual([
+      "calibration-failed",
+      "error",
+      "status-changed",
+    ]);
+    expect(session.getStatus()).toBe("error");
+  });
+
+  it("applies default calibration in any status, once per player", () => {
+    const session = new FakeVisionSession();
+    const events: VisionEvent[] = [];
+    session.subscribe((event) => events.push(event));
+    session.useDefaultCalibration([1, 1]);
+    expect(events).toEqual([
+      { type: "calibration-complete", playerId: 1, mode: "default", timestamp: 0 },
+    ]);
+  });
+
+  it("keeps calibration with the player id when swapping", async () => {
+    const session = new FakeVisionSession();
+    await session.start();
+    const rect = { x: 0.6, y: 0.2, width: 0.2, height: 0.3 };
+    session.completeCalibration(1);
+    session.setPlayer(2, { tracking: "tracked", faceRect: rect });
+    session.swapPlayers();
+    const { players } = session.getDiagnostics();
+    expect(players[1].gesture.calibration).toBe("calibrated");
+    expect(players[1].faceRect).toEqual(rect);
+    expect(players[2].gesture.calibration).toBe("none");
   });
 });
 

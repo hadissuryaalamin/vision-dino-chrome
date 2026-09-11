@@ -58,22 +58,29 @@ interface StartAttempt {
 }
 
 /**
- * A scriptable VisionSession that follows the contract TSDoc in src/shared/vision.ts:
+ * A scriptable VisionSession. Re-verified in Phase 3 against the real session
+ * (src/vision/index.ts, src/vision/README.md, src/vision/session.ts):
  *
- * - `start()` never rejects. It moves idle → requesting-camera → (loading-model) → running or
- *   error, emitting `status-changed` for each step, plus an `error` event on failure. Results
- *   come from `queueStartResult` (default `{ ok: true }`); `holdNextStart` keeps the session in
- *   the loading states until the test resolves it.
- * - `stop()` is idempotent, returns to idle and emits nothing afterwards: events passed to
- *   `emit` while idle or disposed are dropped. The session can be started again. Stopping
- *   during a held start resolves that start with `{ ok: false }`.
- * - `dispose()` stops, and the session can no longer be started.
- * - When running, `useDefaultCalibration` emits `calibration-complete` (`mode: "default"`) per
- *   player and `swapPlayers` emits `players-assigned` (`reason: "swapped"`), as described in
- *   docs/architecture.md §9 and §10.2. `startCalibration` while not running emits
- *   `calibration-failed` (`reason: "not-running"`); `cancelCalibration` during a calibration
- *   emits `calibration-failed` (`reason: "cancelled"`). Other calibration outcomes are scripted
- *   with `progressCalibration`, `completeCalibration` and `failCalibration`.
+ * - `start()` never rejects. It moves idle → requesting-camera → (loading-model) → running.
+ *   A failure emits `error` and then `status-changed` to `error`, and resolves
+ *   `{ ok: false, error }`. Results come from `queueStartResult` (default `{ ok: true }`);
+ *   `holdNextStart` keeps the session in the loading states until the test resolves it.
+ * - A runtime failure (`fail`) first ends a running calibration with `calibration-failed`
+ *   (`not-running`), then emits `error` and `status-changed` to `error`.
+ * - `stop()` is idempotent. It ends a running calibration with `calibration-failed`
+ *   (`cancelled`), emits `status-changed` to `idle` as its last event, and nothing afterwards
+ *   (events passed to `emit` while idle or disposed are dropped). A pending start resolves
+ *   `{ ok: false, error: { code: "unknown" } }` without error events. The session can be
+ *   started again; `dispose()` stops and makes it unusable.
+ * - `startCalibration` while not running emits `calibration-failed` (`not-running`); while
+ *   running it replaces any calibration in progress silently. `cancelCalibration` emits
+ *   `calibration-failed` (`cancelled`).
+ * - `useDefaultCalibration` emits one `calibration-complete` (`mode: "default"`) per requested
+ *   player, in any status except disposed (ICR 2), and removes those players from a running
+ *   calibration without emitting anything else.
+ * - `swapPlayers` (running only) exchanges the faces and emits `players-assigned`
+ *   (`swapped`); calibration stays with the player id. `resetAssignment` emits nothing until
+ *   the next lock (script it with `assignPlayers("reset")`).
  */
 export class FakeVisionSession implements VisionSession {
   readonly options: VisionSessionOptions | null;
@@ -139,8 +146,8 @@ export class FakeVisionSession implements VisionSession {
           if (!attempt.loaded && MODEL_PHASE_ERRORS.has(result.error.code)) {
             this.setStatus("loading-model");
           }
-          this.setStatus("error");
           this.deliver({ type: "error", error: result.error, timestamp: this.now });
+          this.setStatus("error");
         }
         resolvePromise(result);
       };
@@ -171,6 +178,7 @@ export class FakeVisionSession implements VisionSession {
 
   startCalibration(players: readonly PlayerId[] = PLAYER_IDS): void {
     this.calls.push({ method: "startCalibration", players: [...players] });
+    if (this.disposed) return;
     if (this.status !== "running") {
       this.deliver({
         type: "calibration-failed",
@@ -187,7 +195,7 @@ export class FakeVisionSession implements VisionSession {
     this.calls.push({ method: "cancelCalibration" });
     if (this.calibrating === null) return;
     this.calibrating = null;
-    this.emit({
+    this.deliver({
       type: "calibration-failed",
       playerId: null,
       reason: "cancelled",
@@ -197,17 +205,33 @@ export class FakeVisionSession implements VisionSession {
 
   useDefaultCalibration(players: readonly PlayerId[] = PLAYER_IDS): void {
     this.calls.push({ method: "useDefaultCalibration", players: [...players] });
-    if (this.status !== "running") return;
-    for (const playerId of players) this.completeCalibration(playerId, "default");
+    if (this.disposed) return;
+    for (const playerId of new Set(players)) {
+      this.applyCalibration(playerId, "default");
+      this.deliver({
+        type: "calibration-complete",
+        playerId,
+        mode: "default",
+        timestamp: this.now,
+      });
+    }
   }
 
   swapPlayers(): void {
     this.calls.push({ method: "swapPlayers" });
     if (this.status !== "running") return;
     const { players } = this.diagnostics;
+    const face = (player: PlayerVisionDiagnostics) => ({
+      tracking: player.tracking,
+      faceRect: player.faceRect,
+      lastSeenAt: player.lastSeenAt,
+    });
     this.diagnostics = {
       ...this.diagnostics,
-      players: { 1: { ...players[2], playerId: 1 }, 2: { ...players[1], playerId: 2 } },
+      players: {
+        1: { ...players[1], ...face(players[2]) },
+        2: { ...players[2], ...face(players[1]) },
+      },
     };
     this.emit({ type: "players-assigned", reason: "swapped", timestamp: this.now });
   }
@@ -298,15 +322,8 @@ export class FakeVisionSession implements VisionSession {
   }
 
   completeCalibration(playerId: PlayerId, mode: CalibrationMode = "calibrated"): boolean {
-    const gesture = this.diagnostics.players[playerId].gesture;
-    this.setPlayer(playerId, {
-      tracking: "tracked",
-      gesture: { ...gesture, calibration: mode, state: "disarmed" },
-    });
-    if (this.calibrating) {
-      const remaining = this.calibrating.filter((id) => id !== playerId);
-      this.calibrating = remaining.length > 0 ? remaining : null;
-    }
+    this.applyCalibration(playerId, mode);
+    this.setPlayer(playerId, { tracking: "tracked" });
     return this.emit({ type: "calibration-complete", playerId, mode, timestamp: this.now });
   }
 
@@ -317,9 +334,17 @@ export class FakeVisionSession implements VisionSession {
 
   /** Simulate a runtime failure, e.g. the camera track ended (the default). */
   fail(code: VisionErrorCode = "camera-disconnected"): void {
-    this.calibrating = null;
-    this.setStatus("error");
+    if (this.calibrating) {
+      this.calibrating = null;
+      this.deliver({
+        type: "calibration-failed",
+        playerId: null,
+        reason: "not-running",
+        timestamp: this.now,
+      });
+    }
     this.deliver({ type: "error", error: { code, message: `fake ${code}` }, timestamp: this.now });
+    this.setStatus("error");
   }
 
   setDiagnostics(overrides: Partial<VisionDiagnostics>): void {
@@ -338,14 +363,32 @@ export class FakeVisionSession implements VisionSession {
     };
   }
 
+  private applyCalibration(playerId: PlayerId, mode: CalibrationMode): void {
+    const gesture = this.diagnostics.players[playerId].gesture;
+    this.setPlayer(playerId, { gesture: { ...gesture, calibration: mode, state: "disarmed" } });
+    if (this.calibrating) {
+      const remaining = this.calibrating.filter((id) => id !== playerId);
+      this.calibrating = remaining.length > 0 ? remaining : null;
+    }
+  }
+
   private halt(): void {
-    this.calibrating = null;
     const current = this.current;
     if (current?.finish) {
-      // Resolve after leaving the running states so no error event is emitted.
+      // A pending start resolves without error events; stop() still reports idle below.
       this.current = null;
-      if (this.status !== "idle") this.setStatus("idle");
+      this.status = "idle";
       current.finish(visionError("unknown", "stopped while starting"));
+      this.status = "requesting-camera";
+    }
+    if (this.calibrating) {
+      this.calibrating = null;
+      this.deliver({
+        type: "calibration-failed",
+        playerId: null,
+        reason: "cancelled",
+        timestamp: this.now,
+      });
     }
     if (this.status !== "idle") this.setStatus("idle");
   }
