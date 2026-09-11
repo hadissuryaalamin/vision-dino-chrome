@@ -73,7 +73,12 @@ export type AppEvent =
   | { readonly type: "calibration-use-defaults" }
   | { readonly type: "swap-players" }
   | { readonly type: "reset-assignment" }
-  | { readonly type: "game-event"; readonly event: GameEvent }
+  | {
+      readonly type: "game-event";
+      readonly event: GameEvent;
+      /** The snapshot's result when the event was emitted, so game-over renders once, complete. */
+      readonly result?: GameResult | null;
+    }
   /** Enter, or the Start / Play again buttons. */
   | { readonly type: "start-or-restart" }
   | { readonly type: "restart" }
@@ -197,7 +202,7 @@ export function transition(state: AppState, event: AppEvent): Transition {
           }
         : none(state);
     case "game-event":
-      return gameEvent(state, event.event);
+      return gameEvent(state, event.event, event.result);
     case "start-or-restart":
       return startOrRestart(state);
     case "restart":
@@ -386,10 +391,9 @@ function visionEvent(state: AppState, event: VisionEvent): Transition {
       return calibrationComplete(state, event.playerId, event.mode);
     case "calibration-failed": {
       if (state.screen !== "calibrating") return none(state);
-      // Applying defaults may cancel a measurement in progress; that is not a failure.
-      if (event.reason === "cancelled" && state.calibration.request === "defaults") {
-        return none(state);
-      }
+      // The app owns every cancellation (stop() on Keyboard only, camera off, pagehide), and
+      // it has already left this screen when one arrives, so "cancelled" is never a failure.
+      if (event.reason === "cancelled") return none(state);
       const { playerId, reason } = event;
       const calibration = state.calibration;
       const players =
@@ -503,12 +507,16 @@ function calibrationComplete(
 
 // ---- Game ----
 
-function gameEvent(state: AppState, event: GameEvent): Transition {
+function gameEvent(
+  state: AppState,
+  event: GameEvent,
+  snapshotResult: GameResult | null | undefined,
+): Transition {
   switch (event.type) {
     case "status-changed": {
       const game = {
         status: event.status,
-        result: event.status === "running" ? null : state.game.result,
+        result: event.status === "running" ? null : (snapshotResult ?? state.game.result),
       };
       const screen = isGameScreen(state.screen) ? screenForGameStatus(event.status) : state.screen;
       const announcement = statusAnnouncement(event.previous, event.status);

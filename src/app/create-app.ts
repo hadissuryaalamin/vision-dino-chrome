@@ -267,7 +267,11 @@ export function createApp(root: HTMLElement, deps: AppDependencies): AppHandle {
   cleanups.push(
     game.subscribe((event) => {
       view.logEvent(describeGameEvent(event));
-      dispatch({ type: "game-event", event });
+      dispatch(
+        event.type === "status-changed"
+          ? { type: "game-event", event, result: game.getSnapshot().result }
+          : { type: "game-event", event },
+      );
     }),
   );
   track(keyboard.start());

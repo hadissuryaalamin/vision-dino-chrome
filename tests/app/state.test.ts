@@ -385,6 +385,29 @@ describe("calibration", () => {
     expect(retry.effects).toEqual([{ type: "start-calibration", players: [1, 2] }]);
   });
 
+  it("never shows a cancellation as a failure: the app owns every cancel", () => {
+    const { state, effects } = run(
+      calibrating(),
+      vision({ type: "calibration-failed", playerId: 1, reason: "cancelled", timestamp: 0 }),
+    );
+    expect(state.calibration.failure).toBeNull();
+    expect(effects).toEqual([]);
+  });
+
+  it("renders a game-over result taken from the snapshot at the status change", () => {
+    const result = { winner: 1 as const, scores: { 1: 9, 2: 9 } };
+    const { state } = run(
+      run(initial(), { type: "choose-keyboard" }, gameStatus("running", "ready")).state,
+      {
+        type: "game-event",
+        event: { type: "status-changed", status: "game-over", previous: "running", elapsedMs: 0 },
+        result,
+      },
+    );
+    expect(state.screen).toBe("game-over");
+    expect(state.game.result).toEqual(result);
+  });
+
   it("applies defaults, ignoring the cancellation that may cause", () => {
     const failed = run(
       calibrating(),
