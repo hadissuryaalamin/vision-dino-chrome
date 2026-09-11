@@ -353,6 +353,63 @@ describe("vision session: calibration", () => {
     ]);
   });
 
+  it("applies defaults with exactly one calibration-complete per player, in any state", () => {
+    const h = createHarness();
+    h.session.useDefaultCalibration([1, 1]);
+    expect(h.events).toEqual([
+      { type: "calibration-complete", playerId: 1, mode: "default", timestamp: 0 },
+    ]);
+    h.session.useDefaultCalibration();
+    h.session.useDefaultCalibration([]);
+    expect(h.ofType("calibration-complete").map((event) => [event.playerId, event.mode])).toEqual([
+      [1, "default"],
+      [1, "default"],
+      [2, "default"],
+    ]);
+    expect(h.events).toHaveLength(3);
+    expect(h.session.getDiagnostics().players[2].gesture.calibration).toBe("default");
+  });
+
+  it("with one face, calibrates the player on that face's side of the preview", async () => {
+    const h = await startRunning();
+    // Mirrored preview: camera x 0.3 appears on the right → Player 2 by side (§9 item 5).
+    const single = (mar = 0.05) => [makeFace({ cx: 0.3, mar })];
+    const last = h.run(0, 500, FPS, () => single());
+    let diagnostics = h.session.getDiagnostics();
+    expect(diagnostics.players[2].tracking).toBe("tracked");
+    expect(diagnostics.players[1].tracking).toBe("unassigned");
+
+    h.session.startCalibration([2]);
+    const start = last + STEP;
+    // Measuring starts after the face has been tracked for 750 ms, then 2 s of neutral.
+    const opening = (t: number): boolean => {
+      const rel = t - start;
+      return rel >= 3300 && rel < 6300 && (rel - 3300) % 1000 < 300;
+    };
+    h.run(start, start + 7500, FPS, (t) => single(opening(t) ? MOUTH_OPEN : 0.05));
+    expect(h.ofType("calibration-complete")).toMatchObject([{ playerId: 2, mode: "calibrated" }]);
+    expect(h.ofType("calibration-failed")).toEqual([]);
+    expect(h.ofType("players-assigned")).toEqual([]); // a single face never locks
+    diagnostics = h.session.getDiagnostics();
+    expect(diagnostics.players[2].gesture.calibration).toBe("calibrated");
+    expect(diagnostics.players[1].gesture.calibration).toBe("none");
+  });
+
+  it("does not bind a single face on the other side to the requested player", async () => {
+    const h = await startRunning();
+    // Camera x 0.7 appears on the left of the mirrored preview → Player 1 by side.
+    const single = () => [makeFace({ cx: 0.7 })];
+    const last = h.run(0, 500, FPS, single);
+    h.session.startCalibration([2]);
+    h.run(last + STEP, last + 11_000, FPS, single);
+    expect(h.ofType("calibration-failed")).toMatchObject([
+      { playerId: null, reason: "not-enough-faces" },
+    ]);
+    const diagnostics = h.session.getDiagnostics();
+    expect(diagnostics.players[1].tracking).toBe("tracked");
+    expect(diagnostics.players[2].tracking).toBe("unassigned");
+  });
+
   it("calibrates both players concurrently, then detects their gestures", async () => {
     const { h, t } = await calibratedPair();
     expect(h.ofType("calibration-complete").map((event) => [event.playerId, event.mode])).toEqual([
