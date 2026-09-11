@@ -155,9 +155,17 @@ Per player: metric → quality gate → smoothing → normalisation → hysteres
    away from neutral and returning halfway. The gesture level is the median of the peaks.
    Nothing seen → `gesture-not-detected`; too few → `timeout`.
 
-A lost face fails that player with `face-lost`. `useDefaultCalibration()` applies population
-defaults (EAR 0.28 → 0.12, MAR 0.05 → 0.45) and emits `calibration-complete` with
-`mode: "default"`.
+A lost face fails that player with `face-lost`. `useDefaultCalibration(players?)` applies
+population defaults (EAR 0.28 → 0.12, MAR 0.05 → 0.45) and emits exactly one
+`calibration-complete` with `mode: "default"` per requested player (duplicates ignored), in any
+status.
+
+**One face visible.** A single face is never bound to the player you name. Before the lock it
+belongs to the player on its side of the preview (display x < 0.5 → Player 1, architecture §9
+item 5). `startCalibration([p])` therefore waits until player `p` has been tracked for 750 ms. If
+the only face is on the other side, it fails with `not-enough-faces` (`playerId: null`) after
+10 s. Choose the camera player by the side of the preview (or check
+`getDiagnostics().players[p].tracking === "tracked"`) before calling it.
 
 ## Configuration
 
