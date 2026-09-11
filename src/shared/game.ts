@@ -19,7 +19,11 @@ export interface PlayerSnapshot {
 }
 
 export interface GameResult {
-  /** The player with the higher final score, or null on a tie. */
+  /**
+   * The player with the higher final score. On equal scores, the player who crashed later (or
+   * did not crash) wins. null only when both crashed in the same simulation step with equal
+   * scores (ICR 1).
+   */
   readonly winner: PlayerId | null;
   readonly scores: PerPlayer<number>;
 }

@@ -49,6 +49,13 @@ Owned by the orchestrator. Agents propose additions in their reports.
 
 None at the moment. New questions get the next number (O-13, ...).
 
+## Interface Change Requests
+
+| ID    | Requested by | Change                                                                                                                                                    | Status                                               |
+| ----- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| ICR 1 | Agent 1      | `GameResult.winner`: on equal scores the player who crashed later (or did not crash) wins; `null` only for a same-step crash with equal scores. Doc-only. | Approved by the user, 2026-09-12. Matches O-03.      |
+| ICR 2 | Agent 3      | `VisionSession.useDefaultCalibration` emits one `calibration-complete` (`mode: "default"`) per player. Doc-only; already stated in architecture §10.2.    | Approved by the orchestrator, 2026-09-12 (additive). |
+
 ## Risks
 
 | ID   | Risk                                                                                 | Mitigation                                                                                            |

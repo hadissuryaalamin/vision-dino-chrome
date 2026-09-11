@@ -11,7 +11,7 @@
 
 ## Phases
 
-### Phase 1: Shared contracts (orchestrator) — set up, awaiting commit
+### Phase 1: Shared contracts (orchestrator) — done (merged in PR #2)
 
 - Tooling: npm, TypeScript, Vite, Vitest, ESLint (with boundary rules), Prettier.
 - Contracts in `src/shared/`, pinned by `tests/shared/contracts.test.ts`.

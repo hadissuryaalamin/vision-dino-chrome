@@ -130,8 +130,9 @@ export function createKeyboardInputSource(options: KeyboardInputOptions): Player
    that player's score and emits `player-crashed` once.
 7. **Scoring and round end:** score grows with distance while alive. With `roundEnd:
 "all-crashed"` (default; decision O-03) the round ends when both players have crashed.
-   `first-crash` ends it at the first crash. Build the `GameResult`: higher score wins, and a
-   tie gives `winner: null`. Emit `game-over` once.
+   `first-crash` ends it at the first crash. Build the `GameResult`: higher score wins; on equal scores the
+   player who crashed later (or did not crash) wins, and only a same-step crash with equal
+   scores gives `winner: null` (ICR 1). Emit `game-over` once.
 8. **Events and snapshot:** emit `status-changed`, `player-jumped`, `player-crashed` and
    `game-over` synchronously after each change. `getSnapshot()` returns an immutable object
    that is replaced when the state changes (do not allocate on every call).
@@ -193,7 +194,8 @@ export function createKeyboardInputSource(options: KeyboardInputOptions): Player
 - Obstacles: seeded determinism, identical sequences for both lanes, minimum gap versus speed,
   removal off screen, a clearability simulation over many seeds.
 - Collision: edge contact with the inset, near misses, collision during a jump.
-- Scoring and results: score freeze on crash, both round-end modes, winner and tie.
+- Scoring and results: score freeze on crash, both round-end modes, higher score wins, the
+  survivor wins on equal scores, and a same-step crash with equal scores is a tie.
 - Restart: resets everything and derives a new seed deterministically.
 - Pause: elapsed time and positions frozen; resume continues.
 - Loop: fixed-step accumulation, clamping, frame-rate independence, manual scheduler.
