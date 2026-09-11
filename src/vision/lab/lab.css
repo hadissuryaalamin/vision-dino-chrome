@@ -1,0 +1,122 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+  --p1: #1e88e5;
+  --p2: #e53935;
+  --muted: #888;
+}
+
+body {
+  margin: 0;
+  padding: 1rem;
+}
+
+main {
+  display: grid;
+  gap: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+h1,
+h2 {
+  margin: 0 0 0.5rem;
+}
+
+.notice {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 4px solid #43a047;
+  background: color-mix(in srgb, #43a047 12%, transparent);
+}
+
+.controls,
+.tuning fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+}
+
+.stage {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(12rem, 1fr);
+  gap: 1rem;
+}
+
+.preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #111;
+}
+
+.preview video,
+.preview canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.preview video {
+  object-fit: contain;
+}
+
+/* The preview is mirrored by CSS; the overlay canvas is never mirrored, so labels stay readable. */
+.preview video.mirrored {
+  transform: scaleX(-1);
+}
+
+dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 0.75rem;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+dt {
+  color: var(--muted);
+}
+
+dd {
+  margin: 0;
+}
+
+.players {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: 1rem;
+}
+
+.player {
+  padding: 0.75rem;
+  border: 2px solid var(--p1);
+  border-radius: 6px;
+}
+
+.player[data-player="2"] {
+  border-color: var(--p2);
+}
+
+.sparkline {
+  width: 100%;
+  height: 90px;
+  background: color-mix(in srgb, currentColor 6%, transparent);
+}
+
+.log ol {
+  max-height: 18rem;
+  overflow-y: auto;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+}
+
+.log li.gesture {
+  font-weight: bold;
+}
+
+.log li.error {
+  color: var(--p2);
+}
