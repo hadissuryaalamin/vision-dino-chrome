@@ -95,17 +95,18 @@ None at the moment. New questions get the next number (O-13, ...).
 
 ## Follow-ups
 
-| ID   | Item                                                                                                                                                               | Owner   | Status                                      |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | ------------------------------------------- |
-| F-01 | `getUserMedia` rejecting with `NotSupportedError` maps to `unknown`, so the UI shows the generic "camera could not be started" instead of the unsupported message. | Agent 2 | In progress on `agent/vision-camera-error`. |
-| F-02 | Gesture thresholds are the architecture's starting values; no two-player tuning has happened yet.                                                                  | Agent 2 | Open; needs a session with two people.      |
-| F-03 | Two-face behaviour (labels, crossing, swap/reset, simultaneous gestures) is untested with real faces.                                                              | QA      | Open; needs a second person.                |
-| F-04 | Performance numbers (game fps with vision on, inference ms, gesture-to-jump latency) are unmeasured.                                                               | QA      | Open.                                       |
+| ID   | Item                                                                                                                                                               | Owner   | Status                                                  |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | ------------------------------------------------------- |
+| F-01 | `getUserMedia` rejecting with `NotSupportedError` maps to `unknown`, so the UI shows the generic "camera could not be started" instead of the unsupported message. | Agent 2 | **Done**: PR #9, merged in `eba2d97`.                   |
+| F-02 | Gesture thresholds: two-player testing found **mouth-open too sensitive**; blink felt right.                                                                       | Agent 2 | In progress on `agent/vision-mouth-threshold`.          |
+| F-03 | Two-face behaviour (labels, crossing, swap/reset, simultaneous gestures) is untested with real faces.                                                              | QA      | **Done**: verified 2026-09-13 on Edge with two players. |
+| F-04 | Performance numbers (game fps with vision on, inference ms, gesture-to-jump latency) are unmeasured.                                                               | QA      | Open.                                                   |
 
 ## Test log
 
-| Date       | Tester | Build               | Result                                                                                                                                               |
-| ---------- | ------ | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-09-13 | User   | local `npm run dev` | Vision works: blink and mouth-open gestures drive the game. Tested **solo, one player at a time**, so two-face behaviour is still unverified (F-03). |
+| Date       | Tester | Build               | Result                                                                                                                                                                                                                 |
+| ---------- | ------ | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-13 | User   | local `npm run dev` | Vision works: blink and mouth-open gestures drive the game. Tested **solo, one player at a time**, so two-face behaviour is still unverified (F-03).                                                                   |
+| 2026-09-13 | User   | Edge (desktop)      | **Two players, works fine.** Both faces tracked and both dinosaurs controlled independently (closes F-03). Blink detection felt right; **mouth-open too sensitive** (F-02). No fps or latency numbers captured (F-04). |
 
 Record further browsers, versions, cameras and measurements here during Phase 4.
