@@ -25,8 +25,11 @@ Vision Dino is a **two-player endless runner** inspired by the Chrome Dino game,
   unavailable.
 - The game is fully playable and testable without a camera.
 
-**Status:** Phase 1 (shared contracts, tooling, documentation) is set up and validated. The game
-engine, the vision pipeline and the application UI are **not implemented yet**.
+**Status:** Phases 1–3 are complete and merged. The game engine, the vision pipeline and the
+integrated application are on `main`, which deploys to
+<https://hadissuryaalamin.github.io/vision-dino-chrome/> on every merge. Phase 4 (manual QA with
+a real camera, threshold tuning, performance measurements) is outstanding; see
+`docs/decisions.md` for the test log and follow-ups.
 
 ## Stack and commands
 
@@ -58,12 +61,12 @@ Camera access requires a secure context. `localhost` qualifies; a LAN IP over pl
 Edit only files you own. Everything else is read-only for you unless the orchestrator approves a
 change.
 
-| Owner                           | Paths                                                                                                                                                                                                                                                                                    |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Orchestrator                    | `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/**`, `src/shared/**`, `tests/shared/**`, `package.json`, `package-lock.json`, `tsconfig.json`, `eslint.config.js`, `vitest.config.ts`, `.prettierrc.json`, `.prettierignore`, `.gitignore`, `.gitattributes`, `vite.config.ts` (Phases 1–2) |
-| Agent 1: Game Systems           | `src/game/**`, `tests/game/**`                                                                                                                                                                                                                                                           |
-| Agent 2: Vision and Gesture     | `src/vision/**`, `tests/vision/**`, `public/vision/**`                                                                                                                                                                                                                                   |
-| Agent 3: Integration, UI and QA | `src/main.ts`, `src/app/**`, `src/ui/**`, `index.html`, `public/**` except `public/vision/**`, `tests/app/**`, `tests/ui/**`, `tests/integration/**`, `tests/support/**`, `e2e/**`, `playwright.config.ts`, `.github/workflows/**`, `vite.config.ts` (Phase 3 onward)                    |
+| Owner                           | Paths                                                                                                                                                                                                                                                                                                        |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Orchestrator                    | `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/**`, `src/shared/**`, `tests/shared/**`, `package.json`, `package-lock.json`, `tsconfig.json`, `eslint.config.js`, `vitest.config.ts`, `.prettierrc.json`, `.prettierignore`, `.gitignore`, `.gitattributes`, `vite.config.ts` (Phases 1–2)                     |
+| Agent 1: Game Systems           | `src/game/**`, `tests/game/**`                                                                                                                                                                                                                                                                               |
+| Agent 2: Vision and Gesture     | `src/vision/**`, `tests/vision/**`, `public/vision/**`                                                                                                                                                                                                                                                       |
+| Agent 3: Integration, UI and QA | `src/main.ts`, `src/app/**`, `src/ui/**`, `index.html`, `public/**` except `public/vision/**`, `tests/app/**`, `tests/ui/**`, `tests/integration/**`, `tests/support/**`, `e2e/**` (including `e2e/playwright.config.ts` and `e2e/tsconfig.json`), `.github/workflows/**`, `vite.config.ts` (Phase 3 onward) |
 
 Pre-approved exceptions:
 

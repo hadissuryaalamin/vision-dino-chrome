@@ -20,7 +20,7 @@
 - **Exit:** `npm run check` passes, and Phase 1 is committed to `main` (see "Landing Phase 1").
   The agent branches are created from that commit.
 
-### Phase 2: Parallel implementation (Agents 1 and 2)
+### Phase 2: Parallel implementation (Agents 1 and 2) — done (PRs #3 and #5)
 
 - Agent 1 builds the keyboard-playable game, playable at `/src/game/playground/` in
   `npm run dev`.
@@ -35,7 +35,7 @@
   ownership check; the user or orchestrator reviews it, marks it ready and merges. Merge order:
   **game first** (no dependencies), then **vision** (adds `@mediapipe/tasks-vision` and assets).
 
-### Phase 3: Integration (Agent 3)
+### Phase 3: Integration (Agent 3) — done (PR #7; first deployment succeeded)
 
 - Merge `main` into `agent/integration-qa` after both Phase 2 branches have landed.
 - Wire `createGame`, `createKeyboardInputSource`, `createVisionSession` and
