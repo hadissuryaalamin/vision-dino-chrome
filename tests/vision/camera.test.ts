@@ -60,9 +60,16 @@ describe("camera adapter", () => {
   it.each<[string, VisionErrorCode]>([
     ["NotAllowedError", "camera-permission-denied"],
     ["SecurityError", "camera-permission-denied"],
+    ["PermissionDeniedError", "camera-permission-denied"],
+    ["PermissionDismissedError", "camera-permission-denied"],
     ["NotFoundError", "camera-not-found"],
+    ["DevicesNotFoundError", "camera-not-found"],
     ["NotReadableError", "camera-in-use"],
+    ["TrackStartError", "camera-in-use"],
+    ["SourceUnavailableError", "camera-in-use"],
     ["AbortError", "camera-in-use"],
+    // Headless Chromium without a permission prompt rejects with NotSupportedError (F-01).
+    ["NotSupportedError", "camera-unsupported"],
     ["SomethingElseError", "unknown"],
   ])("maps %s to %s", async (name, code) => {
     const devices = new FakeMediaDevices();
@@ -73,8 +80,26 @@ describe("camera adapter", () => {
     expect(devices.calls).toHaveLength(1);
   });
 
+  it("maps a TypeError to camera-unsupported", () => {
+    expect(mapCameraError(new TypeError("constraints"))).toEqual({
+      code: "camera-unsupported",
+      message: "TypeError: constraints",
+    });
+  });
+
+  it("recognises the constraints failure under its legacy name", () => {
+    for (const name of ["OverconstrainedError", "ConstraintNotSatisfiedError"]) {
+      expect(mapCameraError(new DOMException(`fake ${name}`, name)).code).toBe("camera-not-found");
+    }
+  });
+
   it.each<[string, GetUserMediaBehavior[], VisionErrorCode | "ok"]>([
     ["succeeds on the relaxed retry", [{ reject: "OverconstrainedError" }, "grant"], "ok"],
+    [
+      "retries the legacy constraint name too",
+      [{ reject: "ConstraintNotSatisfiedError" }, "grant"],
+      "ok",
+    ],
     [
       "reports not-found when the retry is overconstrained too",
       [{ reject: "OverconstrainedError" }, { reject: "OverconstrainedError" }],

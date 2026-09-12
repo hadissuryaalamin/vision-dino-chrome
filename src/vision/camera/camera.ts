@@ -14,17 +14,49 @@ export class CameraError extends Error {
   }
 }
 
+/**
+ * getUserMedia rejection names, from the Media Capture and Streams specification plus the
+ * legacy names (marked) that older browsers still throw.
+ */
 const ERROR_CODES: Readonly<Record<string, VisionErrorCode>> = {
+  // Permission refused by the user, the browser or a Permissions-Policy.
   NotAllowedError: "camera-permission-denied",
   SecurityError: "camera-permission-denied",
-  PermissionDeniedError: "camera-permission-denied", // legacy Chrome name
+  PermissionDeniedError: "camera-permission-denied", // legacy Chrome
+  PermissionDismissedError: "camera-permission-denied", // legacy Chrome: prompt dismissed
+
+  // No device of the requested kind, or none matching the constraints.
   NotFoundError: "camera-not-found",
-  DevicesNotFoundError: "camera-not-found", // legacy Chrome name
+  DevicesNotFoundError: "camera-not-found", // legacy Chrome
   OverconstrainedError: "camera-not-found",
+  ConstraintNotSatisfiedError: "camera-not-found", // legacy name of OverconstrainedError
+
+  // A camera exists but could not be opened: held by another application, or a hardware fault.
   NotReadableError: "camera-in-use",
-  TrackStartError: "camera-in-use", // legacy Chrome name
+  TrackStartError: "camera-in-use", // legacy Chrome
+  SourceUnavailableError: "camera-in-use", // legacy Firefox
+  // Access was granted and no hardware fault was reported, yet the device did not start. The
+  // usual cause is another application holding it, so it gets the same user-facing advice.
   AbortError: "camera-in-use",
+
+  // getUserMedia cannot work in this browser or context.
+  // Headless Chromium without a permission prompt rejects with NotSupportedError (F-01).
+  NotSupportedError: "camera-unsupported",
+  // A TypeError means the call shape is unsupported. This module always requests video, so it
+  // can never mean "no media kinds requested"; in practice the API is unavailable here.
+  TypeError: "camera-unsupported",
 };
+
+const OVERCONSTRAINED_NAMES: readonly string[] = [
+  "OverconstrainedError",
+  "ConstraintNotSatisfiedError", // legacy name
+];
+
+/** True when the rejection means the constraints could not be satisfied (either name). */
+export function isOverconstrainedError(error: unknown): boolean {
+  const name = errorName(error);
+  return name !== null && OVERCONSTRAINED_NAMES.includes(name);
+}
 
 /** Maps a getUserMedia rejection to a VisionError (unknown names → `unknown`). */
 export function mapCameraError(error: unknown): VisionError {
@@ -65,10 +97,12 @@ export interface CameraAdapterOptions {
 }
 
 /**
- * getUserMedia wrapper. Error mapping: NotAllowedError/SecurityError → permission denied;
- * NotFoundError, and OverconstrainedError after one retry with relaxed constraints → not
- * found; NotReadableError/AbortError → in use; no API or insecure context → unsupported.
- * close() stops every track, including those of a stream that arrives after close().
+ * getUserMedia wrapper. Error mapping (see `ERROR_CODES`):
+ * NotAllowedError/SecurityError → permission denied; NotFoundError, and OverconstrainedError
+ * after one retry with relaxed constraints → not found; NotReadableError/AbortError → in use;
+ * NotSupportedError/TypeError, a missing API or an insecure context → unsupported; anything
+ * else → unknown. close() stops every track, including those of a stream that arrives after
+ * close().
  */
 export function createCameraAdapter(options: CameraAdapterOptions): CameraAdapter {
   let stream: MediaStream | null = null;
@@ -102,17 +136,14 @@ export function createCameraAdapter(options: CameraAdapterOptions): CameraAdapte
     try {
       opened = await mediaDevices.getUserMedia(buildCameraConstraints(options.camera));
     } catch (error) {
-      if (errorName(error) !== "OverconstrainedError") {
+      if (!isOverconstrainedError(error)) {
         throw new CameraError(mapCameraError(error), { cause: error });
       }
       try {
         opened = await mediaDevices.getUserMedia(RELAXED_CAMERA_CONSTRAINTS);
       } catch (retryError) {
-        const mapped: VisionError =
-          errorName(retryError) === "OverconstrainedError"
-            ? { code: "camera-not-found", message: describeError(retryError) }
-            : mapCameraError(retryError);
-        throw new CameraError(mapped, { cause: retryError });
+        // A second constraints failure means no usable camera; other names map as usual.
+        throw new CameraError(mapCameraError(retryError), { cause: retryError });
       }
     }
 
