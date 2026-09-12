@@ -5,8 +5,11 @@ both players: **Player 1 jumps by blinking, Player 2 jumps by opening their mout
 tracking runs entirely in your browser, and no video is uploaded or saved. Keyboard controls
 (`W` and `↑`) always work as well.
 
-> **Status:** project setup (Phase 1). The tooling, shared contracts and development plan are
-> in place. The game and the camera controls are not implemented yet.
+**Play it:** <https://hadissuryaalamin.github.io/vision-dino-chrome/>
+
+> **Status:** the game, the camera controls and the integrated app are built and deployed.
+> Manual QA with two players, threshold tuning and performance measurements are still
+> outstanding (Phase 4; see [`docs/decisions.md`](docs/decisions.md)).
 
 ## Development
 

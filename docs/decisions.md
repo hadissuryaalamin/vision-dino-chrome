@@ -93,6 +93,19 @@ None at the moment. New questions get the next number (O-13, ...).
 - A-05: The site is served over HTTPS (GitHub Pages) or `localhost` during development.
 - A-06: GitHub (`origin`) is the remote; agents open draft pull requests there (O-12).
 
+## Follow-ups
+
+| ID   | Item                                                                                                                                                               | Owner   | Status                                      |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | ------------------------------------------- |
+| F-01 | `getUserMedia` rejecting with `NotSupportedError` maps to `unknown`, so the UI shows the generic "camera could not be started" instead of the unsupported message. | Agent 2 | In progress on `agent/vision-camera-error`. |
+| F-02 | Gesture thresholds are the architecture's starting values; no two-player tuning has happened yet.                                                                  | Agent 2 | Open; needs a session with two people.      |
+| F-03 | Two-face behaviour (labels, crossing, swap/reset, simultaneous gestures) is untested with real faces.                                                              | QA      | Open; needs a second person.                |
+| F-04 | Performance numbers (game fps with vision on, inference ms, gesture-to-jump latency) are unmeasured.                                                               | QA      | Open.                                       |
+
 ## Test log
 
-Record tested browsers, versions, cameras and measurements here in Phase 4.
+| Date       | Tester | Build               | Result                                                                                                                                               |
+| ---------- | ------ | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-13 | User   | local `npm run dev` | Vision works: blink and mouth-open gestures drive the game. Tested **solo, one player at a time**, so two-face behaviour is still unverified (F-03). |
+
+Record further browsers, versions, cameras and measurements here during Phase 4.
