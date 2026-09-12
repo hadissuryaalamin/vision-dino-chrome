@@ -81,6 +81,21 @@ idle ─start()─► requesting-camera ─► loading-model ─► running
   still pending resolves `{ ok: false, error: { code: "unknown" } }` without events.
 - `dispose()` stops, then closes the detector. The session cannot be started again.
 
+**getUserMedia error mapping** (`camera/camera.ts`; `*` marks legacy browser names):
+
+| Rejection                                                                                          | Code                       |
+| -------------------------------------------------------------------------------------------------- | -------------------------- |
+| `NotAllowedError`, `SecurityError`, `PermissionDeniedError`\*, `PermissionDismissedError`\*        | `camera-permission-denied` |
+| `NotFoundError`, `DevicesNotFoundError`\*, `OverconstrainedError`, `ConstraintNotSatisfiedError`\* | `camera-not-found`         |
+| `NotReadableError`, `TrackStartError`\*, `SourceUnavailableError`\*, `AbortError`                  | `camera-in-use`            |
+| `NotSupportedError`, `TypeError`                                                                   | `camera-unsupported`       |
+| anything else                                                                                      | `unknown`                  |
+
+A constraints failure (either name) is retried once with relaxed constraints (`video: true`)
+before it is reported. A missing `navigator.mediaDevices` or an insecure context is detected
+before the call and also gives `camera-unsupported`; headless Chromium without a permission
+prompt rejects with `NotSupportedError`.
+
 ## Events
 
 All events are edge-triggered. Frame-driven events carry the video frame timestamp
