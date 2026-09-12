@@ -579,7 +579,9 @@ delegate: "GPU" }, runningMode: "VIDEO", numFaces: 2 })`;
 - Inference runs on the main thread first, with at most one frame in flight. Move it to a Web
   Worker if profiling shows dropped game frames (O-08).
 - **Browser support:** the target is the latest two major versions of desktop Chrome and Edge.
-  **Nothing has been tested yet, so no browser is claimed as supported.** Firefox and Safari
+  Tested so far: **Edge on
+  desktop** (2026-09-13, two players, works). No other browser has been tested, so none is
+  claimed as supported. Firefox and Safari
   are best effort and unverified (GPU delegate, `requestVideoFrameCallback`). Mobile is out of
   scope. Phase 4 records every tested browser and version in `docs/decisions.md`.
 
