@@ -48,6 +48,22 @@ test.describe("camera permission granted (fake camera)", () => {
     expect(observed.pageErrors).toEqual([]);
   });
 
+  test("ignores ?vision=simulated in the production build", async ({ page }) => {
+    const observed = await observePage(page);
+    await page.goto("./?vision=simulated");
+    await page.getByRole("button", { name: "Play with camera" }).click();
+    await expect(page.getByRole("heading", { name: "Get into position" })).toBeVisible({
+      timeout: 90_000,
+    });
+    // The real pipeline ran: the browser camera was requested and the model was downloaded.
+    expect((await readProbe(page)).getUserMedia).toHaveLength(1);
+    expect(observed.requests.some((url) => url.includes("face_landmarker.task"))).toBe(true);
+    // The only "simulated" URL is the page itself; no dev module was ever fetched.
+    expect(observed.requests.filter((url) => url.includes("simulated"))).toEqual([
+      expect.stringContaining("?vision=simulated"),
+    ]);
+  });
+
   test("stops every camera track on Keyboard only", async ({ page }) => {
     await reachPositioning(page);
     await page.getByRole("button", { name: "Keyboard only" }).click();
