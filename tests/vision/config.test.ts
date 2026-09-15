@@ -22,9 +22,16 @@ describe("vision configuration", () => {
       minActiveMs: 80,
       cooldownMs: 350,
     });
+    // Raised after the F-02 play-test: mouth-open was too easy to trigger.
     expect(config.gestures["mouth-open"]).toMatchObject({
-      enterThreshold: 0.55,
-      exitThreshold: 0.3,
+      enterThreshold: 0.72,
+      exitThreshold: 0.4,
+      minActiveMs: 150,
+      cooldownMs: 350,
+    });
+    expect(config.metrics.geometry["mouth-open"]).toMatchObject({
+      defaultLevels: { neutral: 0.05, active: 0.6 },
+      minSeparation: 0.18,
     });
     expect(config.assignment).toMatchObject({
       assignmentStableMs: 750,

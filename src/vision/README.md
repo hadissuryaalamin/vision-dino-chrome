@@ -171,7 +171,7 @@ Per player: metric → quality gate → smoothing → normalisation → hysteres
    Nothing seen → `gesture-not-detected`; too few → `timeout`.
 
 A lost face fails that player with `face-lost`. `useDefaultCalibration(players?)` applies
-population defaults (EAR 0.28 → 0.12, MAR 0.05 → 0.45) and emits exactly one
+population defaults (EAR 0.28 → 0.12, MAR 0.05 → 0.60) and emits exactly one
 `calibration-complete` with `mode: "default"` per requested player (duplicates ignored), in any
 status.
 
@@ -194,13 +194,16 @@ calibration limits per source and gesture), `quality`, `assignment`, `calibratio
 | Camera                                | `user`, ideal 1280×720 at 30 fps, no audio |
 | `numFaces` / confidences / delegate   | 2 / 0.5 / GPU with CPU fallback            |
 | Blink enter / exit / minActive / cool | 0.60 / 0.35 / 80 ms / 350 ms               |
-| Mouth enter / exit / minActive / cool | 0.55 / 0.30 / 80 ms / 350 ms               |
+| Mouth enter / exit / minActive / cool | 0.72 / 0.40 / 150 ms / 350 ms              |
 | Smoothing τ                           | 40 ms                                      |
 | Min face width / max pitch / max yaw  | 80 px / 25° / 30°                          |
 | Lost / found / reacquire / stable     | 400 / 200 / 3000 / 750 ms                  |
 | Calibration neutral / timeout / reps  | 2 s / 10 s / 3                             |
 
-**None of these values has been tuned on real faces yet.**
+The mouth values (and the mouth `minSeparation`, raised from 0.12 to 0.18) were raised after
+the first two-player play-test found mouth-open too sensitive (follow-up F-02). They follow
+reasoning about talking versus a deliberate opening and still need confirming with a real
+camera. **No other value has been tuned on real faces yet.**
 
 ## Tuning guide (Vision Lab)
 

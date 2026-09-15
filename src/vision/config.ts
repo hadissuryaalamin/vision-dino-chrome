@@ -154,7 +154,11 @@ export const DEFAULT_VISION_CONFIG: Readonly<VisionConfig> = deepFreeze<VisionCo
   smoothingTauMs: 40,
   gestures: {
     blink: { enterThreshold: 0.6, exitThreshold: 0.35, minActiveMs: 80, cooldownMs: 350 },
-    "mouth-open": { enterThreshold: 0.55, exitThreshold: 0.3, minActiveMs: 80, cooldownMs: 350 },
+    // Mouth values raised after the first two-player play-test (follow-up F-02): opening the
+    // mouth fired too easily while talking. A deliberate wide opening still passes comfortably,
+    // and the longer minActiveMs rejects the brief openings of speech at the cost of ~70 ms of
+    // extra latency.
+    "mouth-open": { enterThreshold: 0.72, exitThreshold: 0.4, minActiveMs: 150, cooldownMs: 350 },
   },
   metrics: {
     geometry: {
@@ -164,10 +168,12 @@ export const DEFAULT_VISION_CONFIG: Readonly<VisionConfig> = deepFreeze<VisionCo
         minSeparation: 0.06,
         maxNeutralNoise: 0.03,
       },
-      // Inner-lip mouth aspect ratio: ≈0.05 closed, ≈0.45 wide open.
+      // Inner-lip mouth aspect ratio: ≈0.05 closed, ≈0.60 wide open. Talking peaks around
+      // 0.25–0.35, so with the enter threshold this fires at ≈0.45 MAR (F-02).
       "mouth-open": {
-        defaultLevels: { neutral: 0.05, active: 0.45 },
-        minSeparation: 0.12,
+        defaultLevels: { neutral: 0.05, active: 0.6 },
+        // A calibration opening must be clearly wider than a talking mouth to count.
+        minSeparation: 0.18,
         maxNeutralNoise: 0.04,
       },
     },
