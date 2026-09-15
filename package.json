@@ -1,7 +1,7 @@
 {
   "name": "vision-dino-chrome",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Two-player, camera-controlled endless runner inspired by the Chrome Dino game. Static site; all camera processing stays in the browser.",
   "type": "module",
   "engines": {
