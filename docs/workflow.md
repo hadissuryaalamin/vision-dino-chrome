@@ -73,6 +73,10 @@ Run and record, in the agent report and `docs/decisions.md`:
       third-party host in the production build (decision O-13).
 - [ ] Browsers and versions tested; anything untested is listed as a limitation.
 
+**Phase 4 closed on 2026-09-15** by the user after manual two-player testing of the live build.
+The checklist above was not recorded item by item; what was tested and what remains
+unmeasured is in the `docs/decisions.md` test log and known limitations.
+
 ## Git worktree strategy
 
 A **worktree** is an extra working directory attached to the same repository. Each worktree

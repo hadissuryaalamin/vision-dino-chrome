@@ -7,9 +7,9 @@ tracking runs entirely in your browser, and no video is uploaded or saved. Keybo
 
 **Play it:** <https://hadissuryaalamin.github.io/vision-dino-chrome/>
 
-> **Status:** the game, the camera controls and the integrated app are built and deployed.
-> Manual QA with two players, threshold tuning and performance measurements are still
-> outstanding (Phase 4; see [`docs/decisions.md`](docs/decisions.md)).
+> **Status:** complete (v1.0.0). The game, the camera controls and the integrated app are built,
+> deployed and tested by two players with a real camera. See
+> [`docs/decisions.md`](docs/decisions.md) for the test log and known limitations.
 
 ## Development
 

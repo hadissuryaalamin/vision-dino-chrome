@@ -25,11 +25,11 @@ Vision Dino is a **two-player endless runner** inspired by the Chrome Dino game,
   unavailable.
 - The game is fully playable and testable without a camera.
 
-**Status:** Phases 1–3 are complete and merged. The game engine, the vision pipeline and the
-integrated application are on `main`, which deploys to
-<https://hadissuryaalamin.github.io/vision-dino-chrome/> on every merge. Phase 4 (manual QA with
-a real camera, threshold tuning, performance measurements) is outstanding; see
-`docs/decisions.md` for the test log and follow-ups.
+**Status:** complete (v1.0.0, 2026-09-15). All four phases are merged. The game engine, the
+vision pipeline and the integrated application are on `main`, which deploys to
+<https://hadissuryaalamin.github.io/vision-dino-chrome/> on every merge. Phase 4 closed after
+manual two-player testing and the mouth-open tuning (F-02); see `docs/decisions.md` for the test
+log and known limitations. Any future work starts from a new task specification.
 
 ## Stack and commands
 

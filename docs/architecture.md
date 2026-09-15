@@ -1,8 +1,9 @@
 # Architecture
 
-Status: Phase 1 design. Only `src/shared/**` (contracts) and a placeholder `src/main.ts` exist.
-Everything described under `src/game`, `src/vision`, `src/app` and `src/ui` is **planned**.
-Parameter values are starting points, to be tuned in Phase 4.
+Status: implemented (v1.0.0). This document was written as the Phase 1 design and is kept as the
+reference for how the modules fit together. Parameter values are the Phase 1 starting points,
+except the mouth-open values, which were tuned in Phase 4 (F-02). The source of truth for
+defaults is `src/vision/config.ts`.
 
 ## 1. Goals and constraints
 
@@ -354,7 +355,7 @@ Calibration measures these levels per player, concurrently for both players:
    offers a retry, defaults, or keyboard.
 
 `useDefaultCalibration()` applies population defaults (starting guesses: EAR open ≈ 0.28, closed
-≈ 0.12; MAR closed ≈ 0.05, open ≈ 0.45). Emit `calibration-complete` with `mode: "default"`.
+≈ 0.12; MAR closed ≈ 0.05, open ≈ 0.60 after F-02). Emit `calibration-complete` with `mode: "default"`.
 Calibration lives **in memory only** and follows the player on `swapPlayers()`.
 
 ### 10.3 Hysteresis
@@ -395,7 +396,7 @@ A median of three frames is an acceptable alternative.
 
 ### 10.6 Minimum duration, cooldown and repeat protection
 
-- `minActiveMs` (blink ≈ 80 ms, mouth ≈ 80 ms): the score must stay above `enter` this long.
+- `minActiveMs` (blink ≈ 80 ms, mouth ≈ 150 ms after F-02): the score must stay above `enter` this long.
   It filters one-frame spikes, and for blinks it partly filters involuntary blinks.
 - `cooldownMs` (≈ 350 ms): after an event, a new event is suppressed even if the state machine
   cycles.
@@ -435,7 +436,7 @@ calibration mode. Globally: status, mirroring, faces detected, unassigned faces,
 and inference time. The Vision Lab (Agent 2) and the in-app debug overlay (Agent 3) render
 these. The overlay is off by default and toggled with `` ` `` or `?debug=1`.
 
-### 10.10 Initial parameters (tune in Phase 4)
+### 10.10 Initial parameters (mouth-open tuned in Phase 4)
 
 | Parameter                                             | Start value                                                        |
 | ----------------------------------------------------- | ------------------------------------------------------------------ |
@@ -444,8 +445,8 @@ these. The overlay is off by default and toggled with `` ` `` or `?debug=1`.
 | MediaPipe detection, presence and tracking confidence | 0.5                                                                |
 | Smoothing τ                                           | 40 ms                                                              |
 | Blink enter / exit score                              | 0.60 / 0.35                                                        |
-| Mouth enter / exit score                              | 0.55 / 0.30                                                        |
-| `minActiveMs` (blink / mouth)                         | 80 / 80 ms                                                         |
+| Mouth enter / exit score                              | 0.72 / 0.40 (was 0.55 / 0.30; F-02)                                |
+| `minActiveMs` (blink / mouth)                         | 80 / 150 ms (mouth was 80 ms; F-02)                                |
 | `cooldownMs`                                          | 350 ms                                                             |
 | `faceLostAfterMs` / face found after                  | 400 / 200 ms                                                       |
 | `reacquireWindowMs`                                   | 3000 ms                                                            |
