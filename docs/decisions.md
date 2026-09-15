@@ -95,18 +95,28 @@ None at the moment. New questions get the next number (O-13, ...).
 
 ## Follow-ups
 
-| ID   | Item                                                                                                                                                               | Owner   | Status                                                  |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | ------------------------------------------------------- |
-| F-01 | `getUserMedia` rejecting with `NotSupportedError` maps to `unknown`, so the UI shows the generic "camera could not be started" instead of the unsupported message. | Agent 2 | **Done**: PR #9, merged in `eba2d97`.                   |
-| F-02 | Gesture thresholds: two-player testing found **mouth-open too sensitive**; blink felt right.                                                                       | Agent 2 | In progress on `agent/vision-mouth-threshold`.          |
-| F-03 | Two-face behaviour (labels, crossing, swap/reset, simultaneous gestures) is untested with real faces.                                                              | QA      | **Done**: verified 2026-09-13 on Edge with two players. |
-| F-04 | Performance numbers (game fps with vision on, inference ms, gesture-to-jump latency) are unmeasured.                                                               | QA      | Open.                                                   |
+| ID   | Item                                                                                                                                                               | Owner   | Status                                                                        |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | ----------------------------------------------------------------------------- |
+| F-01 | `getUserMedia` rejecting with `NotSupportedError` maps to `unknown`, so the UI shows the generic "camera could not be started" instead of the unsupported message. | Agent 2 | **Done**: PR #9, merged in `eba2d97`.                                         |
+| F-02 | Gesture thresholds: two-player testing found **mouth-open too sensitive**; blink felt right.                                                                       | Agent 2 | **Done**: PR #11, merged in `fee0fe8`; confirmed 2026-09-15.                  |
+| F-03 | Two-face behaviour (labels, crossing, swap/reset, simultaneous gestures) is untested with real faces.                                                              | QA      | **Done**: verified 2026-09-13 on Edge with two players.                       |
+| F-04 | Performance numbers (game fps with vision on, inference ms, gesture-to-jump latency) are unmeasured.                                                               | QA      | **Closed** 2026-09-15: play felt fine; no numbers captured (limitation L-01). |
 
 ## Test log
 
-| Date       | Tester | Build               | Result                                                                                                                                                                                                                 |
-| ---------- | ------ | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-09-13 | User   | local `npm run dev` | Vision works: blink and mouth-open gestures drive the game. Tested **solo, one player at a time**, so two-face behaviour is still unverified (F-03).                                                                   |
-| 2026-09-13 | User   | Edge (desktop)      | **Two players, works fine.** Both faces tracked and both dinosaurs controlled independently (closes F-03). Blink detection felt right; **mouth-open too sensitive** (F-02). No fps or latency numbers captured (F-04). |
+| Date       | Tester | Build                  | Result                                                                                                                                                                                                                 |
+| ---------- | ------ | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-13 | User   | local `npm run dev`    | Vision works: blink and mouth-open gestures drive the game. Tested **solo, one player at a time**, so two-face behaviour is still unverified (F-03).                                                                   |
+| 2026-09-13 | User   | Edge (desktop)         | **Two players, works fine.** Both faces tracked and both dinosaurs controlled independently (closes F-03). Blink detection felt right; **mouth-open too sensitive** (F-02). No fps or latency numbers captured (F-04). |
+| 2026-09-15 | User   | GitHub Pages `fee0fe8` | Retested after the F-02 mouth-open tuning: **everything is fine.** Closes F-02, and Phase 4.                                                                                                                           |
 
-Record further browsers, versions, cameras and measurements here during Phase 4.
+## Known limitations at project close (v1.0.0)
+
+- L-01: No performance numbers (game fps, vision fps, inference ms, gesture-to-jump latency) were
+  measured. Play felt smooth on the test machine; slower devices are untested.
+- L-02: The only browser recorded in manual testing is desktop Edge. Other browsers, browser
+  versions and mobile devices were not recorded as tested.
+- L-03: The Phase 4 checklist in `docs/workflow.md` was not recorded item by item. Error paths
+  (permission denied, missing camera, model load failure) are covered by automated tests only.
+- L-04: Gesture values other than mouth-open are the Phase 1 starting points; blink was judged
+  right in play but not measured.
