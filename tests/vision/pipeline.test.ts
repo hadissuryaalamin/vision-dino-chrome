@@ -88,3 +88,76 @@ describe("gesture pipeline", () => {
     expect(pipeline.getCalibration()?.mode).toBe("calibrated");
   });
 });
+
+// Follow-up F-02: mouth-open fired too easily during a two-player play-test.
+describe("mouth sensitivity", () => {
+  const MOUTH = DEFAULT_VISION_CONFIG.metrics.geometry["mouth-open"];
+  /** The tuning that shipped before F-02, kept here to prove the regression is fixed. */
+  const BEFORE_F02 = {
+    tuning: { enterThreshold: 0.55, exitThreshold: 0.3, minActiveMs: 80, cooldownMs: 350 },
+    levels: { neutral: 0.05, active: 0.45 },
+  };
+
+  function mouthPipeline(
+    tuning = DEFAULT_VISION_CONFIG.gestures["mouth-open"],
+    levels = MOUTH.defaultLevels,
+  ) {
+    const pipeline = createGesturePipeline({
+      gesture: "mouth-open",
+      metric: metricFunction("mouth-open", "geometry"),
+      tuning,
+      metricTuning: MOUTH,
+      quality: DEFAULT_VISION_CONFIG.quality,
+      smoothingTauMs: DEFAULT_VISION_CONFIG.smoothingTauMs,
+    });
+    pipeline.setCalibration({ levels, mode: "default" });
+    return pipeline;
+  }
+
+  /** Feeds a mouth aspect ratio over time at 30 fps; returns the timestamps that fired. */
+  function feed(
+    pipeline: ReturnType<typeof mouthPipeline>,
+    from: number,
+    to: number,
+    mar: (t: number) => number,
+  ): number[] {
+    const fired: number[] = [];
+    for (let t = from; t <= to + 1e-9; t += 1000 / 30) {
+      if (pipeline.process(makeFace({ cx: 0.5, mar: mar(t) }), 200, FRAME_720P, t).fired) {
+        fired.push(t);
+      }
+    }
+    return fired;
+  }
+
+  /** Talking: open vowels reach MAR ≈ 0.32 for ~250 ms, then the mouth nearly closes. */
+  const talking = (t: number): number => (t % 400 < 250 ? 0.32 : 0.06);
+  /** A deliberate wide opening from 500 ms to 1200 ms. */
+  const wideOpening = (t: number): number => (t >= 500 && t < 1200 ? 0.55 : 0.05);
+
+  it("no longer fires on a talking-like oscillation that used to fire", () => {
+    // The pre-F-02 defaults treated an open vowel as a gesture.
+    const before = feed(mouthPipeline(BEFORE_F02.tuning, BEFORE_F02.levels), 0, 4000, talking);
+    expect(before.length).toBeGreaterThan(0);
+
+    // The current defaults do not: 0.32 never reaches the enter threshold (≈0.45 MAR).
+    expect(feed(mouthPipeline(), 0, 4000, talking)).toEqual([]);
+  });
+
+  it("still fires exactly once for a deliberate wide opening, within 300 ms", () => {
+    const fired = feed(mouthPipeline(), 0, 2000, wideOpening);
+    expect(fired).toHaveLength(1);
+    const firedAt = fired[0] ?? 0;
+    expect(firedAt).toBeGreaterThanOrEqual(
+      500 + DEFAULT_VISION_CONFIG.gestures["mouth-open"].minActiveMs,
+    );
+    expect(firedAt).toBeLessThanOrEqual(800);
+  });
+
+  it("keeps a hysteresis gap so a half-open mouth cannot chatter", () => {
+    const tuning = DEFAULT_VISION_CONFIG.gestures["mouth-open"];
+    expect(tuning.enterThreshold - tuning.exitThreshold).toBeGreaterThanOrEqual(0.25);
+    // A mouth held between the thresholds (≈0.35 MAR) never fires.
+    expect(feed(mouthPipeline(), 0, 3000, () => 0.35)).toEqual([]);
+  });
+});

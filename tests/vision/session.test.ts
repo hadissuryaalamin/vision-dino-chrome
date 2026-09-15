@@ -412,7 +412,12 @@ describe("vision session: calibration", () => {
 
   it("calibrates both players concurrently, then detects their gestures", async () => {
     const { h, t } = await calibratedPair();
-    expect(h.ofType("calibration-complete").map((event) => [event.playerId, event.mode])).toEqual([
+    // Players complete independently, so which one finishes first is not part of the contract.
+    const completed = h
+      .ofType("calibration-complete")
+      .map((event) => [event.playerId, event.mode])
+      .sort(([a], [b]) => Number(a) - Number(b));
+    expect(completed).toEqual([
       [1, "calibrated"],
       [2, "calibrated"],
     ]);
@@ -503,8 +508,8 @@ describe("vision session: diagnostics", () => {
     expect(p1.gesture.score).toBe(0);
     expect(p2.gesture).toMatchObject({
       gesture: "mouth-open",
-      enterThreshold: 0.55,
-      exitThreshold: 0.3,
+      enterThreshold: 0.72,
+      exitThreshold: 0.4,
     });
   });
 
